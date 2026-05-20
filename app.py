@@ -11,6 +11,7 @@ import re
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -176,17 +177,35 @@ def parse_molit_xml(xml_text):
     return out
 
 
-def collect_transactions(lawd_cd, months_back=6):
+def collect_transactions(lawd_cd, months_back=3):
+    """병렬 호출 — 3개 API × N개월 동시 처리 (10초 내 완료)"""
     now = datetime.now()
     months = [(now - timedelta(days=30 * i)).strftime("%Y%m") for i in range(months_back)]
     all_tx = {"apt_sale": [], "officetel_sale": [], "apt_rent": []}
+    
+    # 모든 (API × 월) 조합 작업 목록
+    tasks = []
     for ymd in months:
         for api_name in all_tx.keys():
-            rows = fetch_molit(api_name, lawd_cd, ymd)
-            for r in rows:
-                r["_category"] = api_name
-                r["_ymd"] = ymd
-            all_tx[api_name].extend(rows)
+            tasks.append((api_name, ymd))
+    
+    # 6개 worker 병렬 실행
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        future_to_task = {
+            executor.submit(fetch_molit, api_name, lawd_cd, ymd): (api_name, ymd)
+            for api_name, ymd in tasks
+        }
+        for future in as_completed(future_to_task):
+            api_name, ymd = future_to_task[future]
+            try:
+                rows = future.result(timeout=25)
+                for r in rows:
+                    r["_category"] = api_name
+                    r["_ymd"] = ymd
+                all_tx[api_name].extend(rows)
+            except Exception as e:
+                print(f"[parallel] {api_name} {ymd}: {e}")
+    
     return all_tx
 
 
@@ -385,7 +404,7 @@ def health():
 def analyze():
     address = request.args.get('address', '').strip()
     proj_name = request.args.get('proj', '').strip()
-    months = int(request.args.get('months', 6))
+    months = int(request.args.get('months', 3))
     
     if not address:
         return jsonify({"error": "address parameter required"}), 400
