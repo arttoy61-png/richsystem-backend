@@ -1,12 +1,11 @@
+# -*- coding: utf-8 -*-
 """
-(주)리치시스템 — 분양현장 시세조사 API
-국토부 실거래 + 카카오 로컬 API 통합
+========================================================================
+  (주)리치시스템 — 분양현장 시세조사 API (백엔드)
+  auto_report.py v1.1 의 검증된 로직을 Flask로 포팅
+========================================================================
+"""
 
-배포: Render.com 무료 티어
-환경변수 필요:
-  - MOLIT_API_KEY: 공공데이터포털 서비스키 (국토부 실거래)
-  - KAKAO_REST_KEY: 카카오 REST API 키
-"""
 import os
 import re
 import requests
@@ -17,287 +16,355 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# CORS 허용 도메인 (GitHub Pages + 로컬 테스트)
 CORS(app, origins=[
     "https://arttoy61-png.github.io",
     "http://localhost:*",
     "http://127.0.0.1:*",
 ])
 
-# === API Keys ===
 MOLIT_KEY = os.getenv('MOLIT_API_KEY', '')
 KAKAO_KEY = os.getenv('KAKAO_REST_KEY', '')
 
-# === 시군구 코드 매핑 (LAWD_CD 5자리) ===
-SIGUNGU_CODES = {
-    # 서울
-    "종로구": "11110", "중구 서울": "11140", "용산구": "11170", "성동구": "11200",
-    "광진구": "11215", "동대문구": "11230", "중랑구": "11260", "성북구": "11290",
-    "강북구": "11305", "도봉구": "11320", "노원구": "11350", "은평구": "11380",
-    "서대문구": "11410", "마포구": "11440", "양천구": "11470", "강서구": "11500",
-    "구로구": "11530", "금천구": "11545", "영등포구": "11560", "동작구": "11590",
-    "관악구": "11620", "서초구": "11650", "강남구": "11680", "송파구": "11710",
-    "강동구": "11740",
+# === 국토부 실거래 API (auto_report.py와 동일) ===
+MOLIT_ENDPOINTS = {
+    "apt_sale":       "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
+    "officetel_sale": "https://apis.data.go.kr/1613000/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade",
+    "apt_rent":       "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent",
+}
+
+KAKAO_GEOCODE_URL = "https://dapi.kakao.com/v2/local/search/address.json"
+KAKAO_KEYWORD_URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
+
+# === 법정동 코드 (auto_report.py LAWD_CODES + 확장) ===
+LAWD_CODES = {
+    # 울산 (auto_report.py 원본)
+    "울산광역시 동구 일산동":  {"lawd_cd": "31170", "dong_cd": "3117010100"},
+    "울산광역시 동구 미포동":  {"lawd_cd": "31170", "dong_cd": "3117010200"},
+    "울산광역시 동구 전하동":  {"lawd_cd": "31170", "dong_cd": "3117010400"},
+    "울산광역시 동구 동부동":  {"lawd_cd": "31170", "dong_cd": "3117010500"},
+    "울산광역시 동구 서부동":  {"lawd_cd": "31170", "dong_cd": "3117010600"},
+    "울산광역시 동구 방어동":  {"lawd_cd": "31170", "dong_cd": "3117010700"},
+    "울산광역시 동구 화정동":  {"lawd_cd": "31170", "dong_cd": "3117010800"},
+    "울산광역시 동구 남목동":  {"lawd_cd": "31170", "dong_cd": "3117010900"},
+    "울산광역시 남구 신정동":  {"lawd_cd": "31140", "dong_cd": "3114010300"},
+    "울산광역시 남구 야음동":  {"lawd_cd": "31140", "dong_cd": "3114010500"},
+    "울산광역시 남구 삼산동":  {"lawd_cd": "31140", "dong_cd": "3114010800"},
+    # 서울 강서구 (auto_report.py 원본)
+    "서울특별시 강서구 화곡동": {"lawd_cd": "11500", "dong_cd": "1150010500"},
+    "서울특별시 강서구 가양동": {"lawd_cd": "11500", "dong_cd": "1150010300"},
+    "서울특별시 강서구 등촌동": {"lawd_cd": "11500", "dong_cd": "1150010400"},
+    "서울특별시 강서구 염창동": {"lawd_cd": "11500", "dong_cd": "1150010200"},
+    "서울특별시 강서구 발산동": {"lawd_cd": "11500", "dong_cd": "1150010700"},
+    "서울특별시 강서구 마곡동": {"lawd_cd": "11500", "dong_cd": "1150010800"},
+    "서울특별시 강서구 공항동": {"lawd_cd": "11500", "dong_cd": "1150010100"},
+    # 서울 영등포 (파크라움 여의도)
+    "서울특별시 영등포구 여의도동": {"lawd_cd": "11560", "dong_cd": "1156011000"},
+    "서울특별시 영등포구 영등포동": {"lawd_cd": "11560", "dong_cd": "1156010100"},
+    "서울특별시 영등포구 당산동":   {"lawd_cd": "11560", "dong_cd": "1156010400"},
+    # 서울 양천
+    "서울특별시 양천구 목동":   {"lawd_cd": "11470", "dong_cd": "1147010100"},
+    "서울특별시 양천구 신정동": {"lawd_cd": "11470", "dong_cd": "1147010200"},
+    "서울특별시 양천구 신월동": {"lawd_cd": "11470", "dong_cd": "1147010300"},
+    # 서울 동대문
+    "서울특별시 동대문구 답십리동": {"lawd_cd": "11230", "dong_cd": "1123010500"},
+    "서울특별시 동대문구 청량리동": {"lawd_cd": "11230", "dong_cd": "1123010100"},
+    "서울특별시 동대문구 전농동":   {"lawd_cd": "11230", "dong_cd": "1123010200"},
+    "서울특별시 동대문구 회기동":   {"lawd_cd": "11230", "dong_cd": "1123010700"},
+    # 서울 강남권
+    "서울특별시 강남구 역삼동":   {"lawd_cd": "11680", "dong_cd": "1168010100"},
+    "서울특별시 강남구 삼성동":   {"lawd_cd": "11680", "dong_cd": "1168010500"},
+    "서울특별시 강남구 대치동":   {"lawd_cd": "11680", "dong_cd": "1168010600"},
+    "서울특별시 강남구 논현동":   {"lawd_cd": "11680", "dong_cd": "1168010800"},
+    "서울특별시 강남구 신사동":   {"lawd_cd": "11680", "dong_cd": "1168010700"},
+    "서울특별시 서초구 서초동":   {"lawd_cd": "11650", "dong_cd": "1165010800"},
+    "서울특별시 서초구 반포동":   {"lawd_cd": "11650", "dong_cd": "1165010700"},
+    "서울특별시 송파구 잠실동":   {"lawd_cd": "11710", "dong_cd": "1171010100"},
+    # 서울 마포·성수·용산
+    "서울특별시 마포구 공덕동":   {"lawd_cd": "11440", "dong_cd": "1144010100"},
+    "서울특별시 마포구 합정동":   {"lawd_cd": "11440", "dong_cd": "1144013800"},
+    "서울특별시 마포구 상수동":   {"lawd_cd": "11440", "dong_cd": "1144014000"},
+    "서울특별시 성동구 성수동":   {"lawd_cd": "11200", "dong_cd": "1120013100"},
+    "서울특별시 용산구 한남동":   {"lawd_cd": "11170", "dong_cd": "1117011400"},
+    "서울특별시 용산구 이태원동": {"lawd_cd": "11170", "dong_cd": "1117011700"},
     # 부산
-    "중구 부산": "26110", "서구 부산": "26140", "동구 부산": "26170", "영도구": "26200",
-    "부산진구": "26230", "동래구": "26260", "남구 부산": "26290", "북구 부산": "26320",
-    "해운대구": "26350", "사하구": "26380", "금정구": "26410", "강서구 부산": "26440",
-    "연제구": "26470", "수영구": "26500", "사상구": "26530",
-    # 울산
-    "중구 울산": "31110", "남구 울산": "31140", "동구 울산": "31170", "북구 울산": "31200",
-    "울주군": "31710",
-    # 대구·광주·대전·인천·세종
-    "수성구": "27260", "달서구": "27290", "남구 대구": "27200",
-    "광산구": "29200", "서구 광주": "29140", "남구 광주": "29155",
-    "유성구": "30200", "서구 대전": "30170", "중구 대전": "30110",
-    "남동구": "28200", "연수구": "28185", "서구 인천": "28260", "부평구": "28237",
-    "세종특별자치시": "36110",
-    # 경기
-    "수원시": "41110", "성남시": "41130", "안양시": "41170", "부천시": "41190",
-    "광명시": "41210", "평택시": "41220", "안산시": "41270", "고양시": "41280",
-    "과천시": "41290", "용인시": "41460", "파주시": "41480", "김포시": "41570",
+    "부산광역시 해운대구 우동":   {"lawd_cd": "26350", "dong_cd": "2635010100"},
+    "부산광역시 해운대구 중동":   {"lawd_cd": "26350", "dong_cd": "2635010200"},
+    "부산광역시 해운대구 좌동":   {"lawd_cd": "26350", "dong_cd": "2635010400"},
+    "부산광역시 수영구 광안동":   {"lawd_cd": "26500", "dong_cd": "2650010200"},
+    # 경기·인천
+    "경기도 성남시 분당구 정자동": {"lawd_cd": "41135", "dong_cd": "4113510800"},
+    "경기도 성남시 분당구 서현동": {"lawd_cd": "41135", "dong_cd": "4113510700"},
+    "인천광역시 연수구 송도동":    {"lawd_cd": "28185", "dong_cd": "2818510700"},
+}
+
+KNOWN_COMPLEXES = {
+    "KCC스위첸 웰츠타워":   "울산광역시 동구 전하동",
+    "KCC스위첸웰츠타워":     "울산광역시 동구 전하동",
+    "웰츠타워":              "울산광역시 동구 전하동",
+    "전하 KCC스위첸":        "울산광역시 동구 전하동",
+    "아이파크 2단지":        "울산광역시 동구 전하동",
+    "e편한세상 전하":        "울산광역시 동구 전하동",
+    "울산전하 푸르지오":     "울산광역시 동구 전하동",
+    "베스티안":              "울산광역시 동구 전하동",
+    "파크라움 여의도":       "서울특별시 영등포구 여의도동",
+    "파크라움":              "서울특별시 영등포구 여의도동",
 }
 
 
-def extract_sigungu(addr):
-    """주소에서 시군구 추출 → 코드 반환"""
-    # 광역시·도 정보 함께 고려 (예: '부산 동구' vs '서울 동작구')
-    addr_clean = addr.replace('특별시', '').replace('광역시', '').replace('특별자치시', '')
-    
-    # 광역 + 구 패턴 매칭
-    for k, code in SIGUNGU_CODES.items():
-        parts = k.split()
-        if len(parts) == 1:
-            # 단일 키워드 (예: "강남구")
-            if parts[0] in addr_clean:
-                return code, k
-        else:
-            # 광역명 + 구 (예: "부산 해운대구")
-            metro = parts[1]  # "부산", "서울", "대구" etc.
-            district = parts[0]  # "중구", "동구" etc.
-            if metro in addr_clean and district in addr_clean:
-                return code, k
-    
-    return None, None
-
-
-def geocode_kakao(addr):
-    """카카오 주소 → 좌표"""
-    if not KAKAO_KEY:
+def normalize_input(user_input):
+    """auto_report.py normalize_input과 동일"""
+    s = (user_input or "").strip()
+    if not s:
         return None
-    try:
-        r = requests.get(
-            "https://dapi.kakao.com/v2/local/search/address.json",
-            headers={"Authorization": f"KakaoAK {KAKAO_KEY}"},
-            params={"query": addr},
-            timeout=5
-        )
-        if r.ok:
-            docs = r.json().get('documents', [])
-            if docs:
-                d = docs[0]
-                return {"lat": float(d['y']), "lng": float(d['x'])}
-        # 키워드 검색 폴백
-        r = requests.get(
-            "https://dapi.kakao.com/v2/local/search/keyword.json",
-            headers={"Authorization": f"KakaoAK {KAKAO_KEY}"},
-            params={"query": addr},
-            timeout=5
-        )
-        if r.ok:
-            docs = r.json().get('documents', [])
-            if docs:
-                d = docs[0]
-                return {"lat": float(d['y']), "lng": float(d['x'])}
-    except Exception as e:
-        print(f"[geocode] {e}")
+    s_nospace = s.replace(" ", "")
+    for complex_name, full_addr in KNOWN_COMPLEXES.items():
+        if complex_name.replace(" ", "") in s_nospace:
+            return full_addr
+    for full_addr in LAWD_CODES.keys():
+        m = re.search(r'(\S+동)\b', full_addr)
+        if m:
+            dong = m.group(1)
+            if dong in s:
+                return full_addr
+    if s in LAWD_CODES:
+        return s
     return None
 
 
-def fetch_molit_data(api_path, sigungu_code, months=6):
-    """국토부 실거래 API 호출 (최근 N개월)"""
-    if not MOLIT_KEY:
-        return []
-    
-    results = []
-    today = datetime.now()
-    for i in range(months):
-        target_date = today - timedelta(days=30 * i)
-        deal_ym = target_date.strftime('%Y%m')
-        
-        url = f"https://apis.data.go.kr/1613000/{api_path}"
-        params = {
-            "serviceKey": MOLIT_KEY,
-            "LAWD_CD": sigungu_code,
-            "DEAL_YMD": deal_ym,
-            "numOfRows": "100",
-            "pageNo": "1",
-        }
-        try:
-            r = requests.get(url, params=params, timeout=10)
-            if not r.ok:
-                continue
-            root = ET.fromstring(r.text)
-            for item in root.iter('item'):
-                data = {}
-                for child in item:
-                    data[child.tag] = (child.text or '').strip()
-                data['_deal_ym'] = deal_ym
-                results.append(data)
-        except Exception as e:
-            print(f"[molit] {deal_ym}: {e}")
-            continue
-    
-    return results
+def get_codes(full_addr):
+    info = LAWD_CODES.get(full_addr)
+    if info:
+        return info["lawd_cd"], info["dong_cd"]
+    return None, None
 
 
-def parse_officetel_sale(item):
-    """오피스텔 매매 데이터 정규화"""
-    try:
-        amount_str = item.get('거래금액') or item.get('dealAmount') or '0'
-        amount = int(re.sub(r'[^\d]', '', amount_str))  # 만원
-        area = float(item.get('전용면적') or item.get('excluUseAr') or 0)
-        name = (item.get('단지') or item.get('offiNm') or '').strip()
-        dong = (item.get('법정동') or item.get('umdNm') or '').strip()
-        year = (item.get('건축년도') or item.get('buildYear') or '').strip()
-        
-        if area <= 0 or amount <= 0:
-            return None
-        
-        # 평당가 계산 (만원/평)
-        pyung = area / 3.3058  # ㎡ → 평
-        pyung_price = round(amount / pyung) if pyung > 0 else 0
-        
-        return {
-            "name": name,
-            "dong": dong,
-            "year": year,
-            "area_m2": round(area, 1),
-            "area_pyung": round(pyung, 1),
-            "amount_manwon": amount,
-            "pyung_price": pyung_price,
-        }
-    except Exception as e:
-        print(f"[parse_sale] {e}")
-        return None
-
-
-def build_pricing_matrix(sales, top_n=8):
-    """매매 데이터 → 비교군 매트릭스 (상위 N개)"""
-    parsed = [parse_officetel_sale(s) for s in sales]
-    parsed = [p for p in parsed if p is not None]
-    
-    if not parsed:
-        return [], {}
-    
-    # 단지별 평균 (중복 제거)
-    by_name = {}
-    for p in parsed:
-        key = p['name'] or f"{p['dong']}_{p['area_m2']}"
-        if key not in by_name:
-            by_name[key] = []
-        by_name[key].append(p)
-    
-    aggregated = []
-    for name, items in by_name.items():
-        if not items:
-            continue
-        # 평균
-        avg_amount = sum(i['amount_manwon'] for i in items) / len(items)
-        avg_area = sum(i['area_m2'] for i in items) / len(items)
-        avg_pyung_price = sum(i['pyung_price'] for i in items) / len(items)
-        latest = max(items, key=lambda x: x['year'] or '0')
-        
-        aggregated.append({
-            "name": items[0]['name'] or '단지명 미상',
-            "dong": items[0]['dong'],
-            "year": latest['year'],
-            "area_m2": round(avg_area, 1),
-            "amount_manwon": int(avg_amount),
-            "pyung_price": int(avg_pyung_price),
-            "sample_count": len(items),
-        })
-    
-    # 정렬: 평당가 내림차순
-    aggregated.sort(key=lambda x: x['pyung_price'], reverse=True)
-    
-    # 통계
-    pyung_prices = [a['pyung_price'] for a in aggregated]
-    stats = {
-        "count": len(aggregated),
-        "total_transactions": len(parsed),
-        "min_pyung": min(pyung_prices) if pyung_prices else 0,
-        "max_pyung": max(pyung_prices) if pyung_prices else 0,
-        "avg_pyung": int(sum(pyung_prices) / len(pyung_prices)) if pyung_prices else 0,
-        "median_pyung": sorted(pyung_prices)[len(pyung_prices)//2] if pyung_prices else 0,
+def fetch_molit(api_name, lawd_cd, ymd, page=1, num_rows=100):
+    """국토부 API 호출 (auto_report.py와 동일)"""
+    url = MOLIT_ENDPOINTS[api_name]
+    params = {
+        "serviceKey": MOLIT_KEY,
+        "LAWD_CD": lawd_cd,
+        "DEAL_YMD": ymd,
+        "pageNo": page,
+        "numOfRows": num_rows,
     }
-    
-    return aggregated[:top_n], stats
-
-
-def parse_officetel_rent(item):
-    """오피스텔 전월세 정규화"""
     try:
-        deposit_str = item.get('보증금액') or item.get('deposit') or '0'
-        deposit = int(re.sub(r'[^\d]', '', deposit_str))  # 만원
-        rent_str = item.get('월세') or item.get('monthlyRent') or '0'
-        rent = int(re.sub(r'[^\d]', '', rent_str))  # 만원
-        area = float(item.get('전용면적') or item.get('excluUseAr') or 0)
-        
-        if area <= 0:
-            return None
-        
-        is_jeonse = rent == 0
-        
-        return {
-            "deposit_manwon": deposit,
-            "rent_manwon": rent,
-            "area_m2": round(area, 1),
-            "is_jeonse": is_jeonse,
-        }
-    except Exception:
-        return None
+        r = requests.get(url, params=params, timeout=30)
+        r.raise_for_status()
+        return parse_molit_xml(r.text)
+    except Exception as e:
+        print(f"[molit] {api_name} {ymd}: {e}")
+        return []
 
 
-def calc_rent_stats(rents):
-    """전월세 통계"""
-    parsed = [parse_officetel_rent(r) for r in rents]
-    parsed = [p for p in parsed if p is not None]
+def parse_molit_xml(xml_text):
+    out = []
+    try:
+        root = ET.fromstring(xml_text)
+        result_code = root.findtext(".//resultCode")
+        if result_code and result_code != "000":
+            msg = root.findtext(".//resultMsg")
+            print(f"[molit] code={result_code}: {msg}")
+            return []
+        for item in root.iter("item"):
+            d = {}
+            for child in item:
+                d[child.tag] = (child.text or "").strip()
+            out.append(d)
+    except ET.ParseError as e:
+        print(f"[molit] XML 파싱 오류: {e}")
+    return out
+
+
+def collect_transactions(lawd_cd, months_back=6):
+    now = datetime.now()
+    months = [(now - timedelta(days=30 * i)).strftime("%Y%m") for i in range(months_back)]
+    all_tx = {"apt_sale": [], "officetel_sale": [], "apt_rent": []}
+    for ymd in months:
+        for api_name in all_tx.keys():
+            rows = fetch_molit(api_name, lawd_cd, ymd)
+            for r in rows:
+                r["_category"] = api_name
+                r["_ymd"] = ymd
+            all_tx[api_name].extend(rows)
+    return all_tx
+
+
+def to_num(s):
+    if s is None: return 0
+    s = str(s).replace(",", "").replace(" ", "").strip()
+    try:
+        return float(s) if "." in s else int(s)
+    except ValueError:
+        return 0
+
+
+def calc_pyeong_price(deal_amt_man_won, area_sqm):
+    """평당가 = 거래금액(만원) / (전용면적㎡ × 0.3025)"""
+    if area_sqm <= 0:
+        return 0
+    return round(deal_amt_man_won / (area_sqm * 0.3025), 1)
+
+
+def process_transactions(tx_data):
+    """auto_report.py와 완전 동일"""
+    cleaned = []
+    for t in tx_data.get("apt_sale", []):
+        try:
+            amt = to_num(t.get("dealAmount", ""))
+            area = to_num(t.get("excluUseAr", ""))
+            if amt <= 0 or area <= 0:
+                continue
+            cleaned.append({
+                "category": "아파트 매매",
+                "name": t.get("aptNm", "").strip(),
+                "dong": t.get("umdNm", "").strip(),
+                "area": area,
+                "pyeong": round(area * 0.3025, 1),
+                "amount_man": amt,
+                "pyeong_price_man": calc_pyeong_price(amt, area),
+                "floor": t.get("floor", ""),
+                "deal_date": f"{t.get('dealYear','')}.{t.get('dealMonth','').zfill(2)}.{t.get('dealDay','').zfill(2)}",
+                "build_year": t.get("buildYear", ""),
+            })
+        except Exception:
+            continue
+    for t in tx_data.get("officetel_sale", []):
+        try:
+            amt = to_num(t.get("dealAmount", ""))
+            area = to_num(t.get("excluUseAr", ""))
+            if amt <= 0 or area <= 0:
+                continue
+            cleaned.append({
+                "category": "오피스텔 매매",
+                "name": t.get("offiNm", "").strip(),
+                "dong": t.get("umdNm", "").strip(),
+                "area": area,
+                "pyeong": round(area * 0.3025, 1),
+                "amount_man": amt,
+                "pyeong_price_man": calc_pyeong_price(amt, area),
+                "floor": t.get("floor", ""),
+                "deal_date": f"{t.get('dealYear','')}.{t.get('dealMonth','').zfill(2)}.{t.get('dealDay','').zfill(2)}",
+                "build_year": t.get("buildYear", ""),
+            })
+        except Exception:
+            continue
+    for t in tx_data.get("apt_rent", []):
+        try:
+            deposit = to_num(t.get("deposit", ""))
+            monthly = to_num(t.get("monthlyRent", ""))
+            area = to_num(t.get("excluUseAr", ""))
+            if area <= 0:
+                continue
+            cleaned.append({
+                "category": "전세" if monthly == 0 else "월세",
+                "name": t.get("aptNm", "").strip(),
+                "dong": t.get("umdNm", "").strip(),
+                "area": area,
+                "pyeong": round(area * 0.3025, 1),
+                "deposit_man": deposit,
+                "monthly_man": monthly,
+                "floor": t.get("floor", ""),
+                "deal_date": f"{t.get('dealYear','')}.{t.get('dealMonth','').zfill(2)}.{t.get('dealDay','').zfill(2)}",
+            })
+        except Exception:
+            continue
+    return cleaned
+
+
+def aggregate_by_complex(transactions):
+    """단지별 그룹핑 (auto_report.py와 동일)"""
+    by_complex = {}
+    for t in transactions:
+        if "pyeong_price_man" not in t:
+            continue
+        name = t["name"]
+        if not name:
+            continue
+        if name not in by_complex:
+            by_complex[name] = {
+                "name": name,
+                "build_year": t.get("build_year", ""),
+                "transactions": [],
+                "pyeong_prices": [],
+                "latest_date": "",
+                "category": t.get("category", ""),
+                "dong": t.get("dong", ""),
+            }
+        by_complex[name]["transactions"].append(t)
+        by_complex[name]["pyeong_prices"].append(t["pyeong_price_man"])
+        if t["deal_date"] > by_complex[name]["latest_date"]:
+            by_complex[name]["latest_date"] = t["deal_date"]
+            by_complex[name]["latest_tx"] = t
+            by_complex[name]["build_year"] = t.get("build_year") or by_complex[name].get("build_year","")
     
-    if not parsed:
-        return {}
-    
-    jeonse = [p for p in parsed if p['is_jeonse']]
-    wolse = [p for p in parsed if not p['is_jeonse']]
-    
-    stats = {"sample_count": len(parsed)}
-    
+    result = []
+    for name, info in by_complex.items():
+        prices = info["pyeong_prices"]
+        info["avg_pyeong_price"] = round(sum(prices) / len(prices), 0) if prices else 0
+        info["tx_count"] = len(info["transactions"])
+        result.append(info)
+    result.sort(key=lambda x: (x["latest_date"], x["avg_pyeong_price"]), reverse=True)
+    return result
+
+
+def calc_rent_stats(transactions):
+    jeonse = [t for t in transactions if t.get("category") == "전세"]
+    wolse  = [t for t in transactions if t.get("category") == "월세"]
+    stats = {"sample_count": len(jeonse) + len(wolse)}
     if jeonse:
-        deposits = sorted([p['deposit_manwon'] for p in jeonse])
-        stats['jeonse_min'] = deposits[0]
-        stats['jeonse_max'] = deposits[-1]
-        stats['jeonse_median'] = deposits[len(deposits)//2]
-        stats['jeonse_count'] = len(deposits)
-    
+        deps = sorted([t["deposit_man"] for t in jeonse if t.get("deposit_man",0) > 0])
+        if deps:
+            stats.update({
+                "jeonse_min": deps[0],
+                "jeonse_median": deps[len(deps)//2],
+                "jeonse_max": deps[-1],
+                "jeonse_count": len(deps),
+            })
     if wolse:
-        rents = sorted([p['rent_manwon'] for p in wolse])
-        stats['wolse_min'] = rents[0]
-        stats['wolse_max'] = rents[-1]
-        stats['wolse_median'] = rents[len(rents)//2]
-        stats['wolse_count'] = len(rents)
-    
+        rents = sorted([t["monthly_man"] for t in wolse if t.get("monthly_man",0) > 0])
+        if rents:
+            stats.update({
+                "wolse_min": rents[0],
+                "wolse_median": rents[len(rents)//2],
+                "wolse_max": rents[-1],
+                "wolse_count": len(rents),
+            })
     return stats
 
 
-# === Routes ===
+def kakao_geocode(addr):
+    if not KAKAO_KEY:
+        return None
+    try:
+        r = requests.get(KAKAO_GEOCODE_URL,
+                         headers={"Authorization": f"KakaoAK {KAKAO_KEY}"},
+                         params={"query": addr}, timeout=10)
+        if r.ok:
+            docs = r.json().get("documents", [])
+            if docs:
+                return {"lat": float(docs[0]["y"]), "lng": float(docs[0]["x"])}
+        r = requests.get(KAKAO_KEYWORD_URL,
+                         headers={"Authorization": f"KakaoAK {KAKAO_KEY}"},
+                         params={"query": addr}, timeout=10)
+        if r.ok:
+            docs = r.json().get("documents", [])
+            if docs:
+                return {"lat": float(docs[0]["y"]), "lng": float(docs[0]["x"])}
+    except Exception as e:
+        print(f"[kakao] {e}")
+    return None
+
+
 @app.route('/')
 def home():
     return jsonify({
         "service": "(주)리치시스템 분양 시세조사 API",
-        "version": "1.0",
+        "version": "1.1",
+        "based_on": "auto_report.py v1.1 (검증된 로직)",
         "endpoints": {
-            "/api/analyze": "GET ?address=주소&proj=현장명 → 시세 분석 JSON",
-            "/api/health": "GET → 키 등록 상태 확인",
+            "/api/analyze": "GET ?address=주소&proj=현장명&months=N",
+            "/api/health":  "GET 키 등록 상태 확인",
         }
     })
 
@@ -308,7 +375,8 @@ def health():
         "status": "ok",
         "molit_key": bool(MOLIT_KEY),
         "kakao_key": bool(KAKAO_KEY),
-        "supported_sigungu": len(SIGUNGU_CODES),
+        "supported_dongs": len(LAWD_CODES),
+        "known_complexes": len(KNOWN_COMPLEXES),
         "now": datetime.now().isoformat(),
     })
 
@@ -322,42 +390,74 @@ def analyze():
     if not address:
         return jsonify({"error": "address parameter required"}), 400
     
-    # 1. 시군구 코드 추출
-    sigungu_code, sigungu_name = extract_sigungu(address)
-    if not sigungu_code:
+    # 1. 주소 정규화 (현장명 먼저 시도 → 주소)
+    full_addr = normalize_input(proj_name) or normalize_input(address)
+    if not full_addr:
         return jsonify({
-            "error": "지원하지 않는 지역 — 주소에서 시군구를 인식하지 못함",
+            "error": "지원하지 않는 지역 — 동 인식 실패",
             "address": address,
-            "supported": list(SIGUNGU_CODES.keys()),
+            "hint": "주소에 동 이름이 포함되어야 합니다",
+            "supported_count": len(LAWD_CODES),
         }), 400
     
-    # 2. 좌표 (카카오)
-    coords = geocode_kakao(address)
+    # 2. 코드
+    lawd_cd, dong_cd = get_codes(full_addr)
     
-    # 3. 국토부 매매 데이터
-    sales = fetch_molit_data(
-        "RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade",
-        sigungu_code, months
-    )
+    # 3. 좌표
+    coords = kakao_geocode(address) or kakao_geocode(full_addr)
     
-    # 4. 매트릭스 + 통계
-    matrix, stats = build_pricing_matrix(sales, top_n=8)
+    # 4. 국토부 데이터 (3개 API × N개월)
+    tx_data = collect_transactions(lawd_cd, months_back=months)
     
-    # 5. 전월세
-    rents = fetch_molit_data(
-        "RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent",
-        sigungu_code, months
-    )
+    # 5. 정제 + 집계
+    cleaned = process_transactions(tx_data)
+    sales = [t for t in cleaned if "pyeong_price_man" in t]
+    rents = [t for t in cleaned if t.get("category") in ("전세", "월세")]
+    complexes = aggregate_by_complex(sales)
+    
+    # 6. 통계
+    pyung_prices = [c["avg_pyeong_price"] for c in complexes if c["avg_pyeong_price"] > 0]
+    if pyung_prices:
+        stats = {
+            "count": len(complexes),
+            "total_transactions": len(sales),
+            "min_pyung": int(min(pyung_prices)),
+            "max_pyung": int(max(pyung_prices)),
+            "avg_pyung": int(sum(pyung_prices) / len(pyung_prices)),
+            "median_pyung": int(sorted(pyung_prices)[len(pyung_prices)//2]),
+        }
+    else:
+        stats = {"count": 0, "total_transactions": 0, "min_pyung": 0,
+                 "max_pyung": 0, "avg_pyung": 0, "median_pyung": 0}
+    
+    # 7. 상위 8개 비교군
+    top_comparables = []
+    for c in complexes[:8]:
+        latest = c.get("latest_tx", {})
+        top_comparables.append({
+            "name": c["name"],
+            "dong": c.get("dong", ""),
+            "year": c.get("build_year", "—"),
+            "area_m2": latest.get("area", 0),
+            "area_pyung": latest.get("pyeong", 0),
+            "amount_manwon": latest.get("amount_man", 0),
+            "pyung_price": int(c["avg_pyeong_price"]),
+            "tx_count": c["tx_count"],
+            "latest_date": c.get("latest_date", ""),
+            "category": c.get("category", ""),
+        })
+    
     rent_stats = calc_rent_stats(rents)
     
     return jsonify({
         "address": address,
         "proj_name": proj_name,
-        "sigungu_code": sigungu_code,
-        "sigungu_name": sigungu_name,
+        "normalized_addr": full_addr,
+        "lawd_cd": lawd_cd,
+        "dong_cd": dong_cd,
         "coords": coords,
         "pricing": {
-            "comparables": matrix,
+            "comparables": top_comparables,
             "stats": stats,
         },
         "rent": rent_stats,
@@ -368,4 +468,10 @@ def analyze():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    print(f"\n{'='*60}")
+    print(f"  (주)리치시스템 분양 시세조사 API")
+    print(f"  포트: {port}")
+    print(f"  국토부: {'✓' if MOLIT_KEY else '✗'} / 카카오: {'✓' if KAKAO_KEY else '✗'}")
+    print(f"  지원 동: {len(LAWD_CODES)}개")
+    print(f"{'='*60}\n")
     app.run(host='0.0.0.0', port=port, debug=False)
