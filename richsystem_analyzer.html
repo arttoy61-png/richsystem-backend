@@ -2784,20 +2784,32 @@ function kkSetStatus(text, type){
 }
 
 function kkInit(){
-  if(kkReady) return;
   try {
     const mapEl = document.getElementById('kakaoMap');
     if(!mapEl) return;
+    
+    // 기존 오버레이 정리 (이전 맵에 붙어있던 것들)
+    if(kkMainOverlay) { try { kkMainOverlay.setMap(null); } catch(e){} kkMainOverlay = null; }
+    if(kkRadiusItems && kkRadiusItems.length){
+      kkRadiusItems.forEach(c => { try { c.setMap(null); } catch(e){} });
+    }
+    if(kkOverlays && kkOverlays.length){
+      kkOverlays.forEach(o => { try { o.overlay.setMap(null); } catch(e){} });
+    }
+    kkOverlays = [];
+    kkRadiusItems = [];
+    
+    // 새 DOM 컨테이너에 맵 생성 (이미 있으면 새 인스턴스로 교체)
     kkMap = new kakao.maps.Map(mapEl, {
       center: new kakao.maps.LatLng(37.5283, 126.9244),
       level: 4
     });
-    kkGeocoder = new kakao.maps.services.Geocoder();
-    kkPlaces = new kakao.maps.services.Places();
+    if(!kkGeocoder) kkGeocoder = new kakao.maps.services.Geocoder();
+    if(!kkPlaces) kkPlaces = new kakao.maps.services.Places();
     kkInfowindow = new kakao.maps.InfoWindow({zIndex:5});
     kkAnchor = new kakao.maps.Marker({position: new kakao.maps.LatLng(0,0)});
     kkReady = true;
-    kkSetStatus('Kakao 지도 준비 완료 · 주소 입력 후 자동 검색', '');
+    kkSetStatus('Kakao 지도 준비 완료', '');
     return true;
   } catch(e){
     console.error('Kakao init failed:', e);
@@ -3171,16 +3183,18 @@ kkWaitForSdk();
 const _origApplyProject = applyProject;
 applyProject = function(project, isMatched, regionLabel){
   _origApplyProject(project, isMatched, regionLabel);
-  // 지도 재초기화 + 검색
+  // 지도 재초기화 + 검색 (renderReport가 DOM을 새로 만들어서 매번 재초기화 필요)
   setTimeout(() => {
-    if(kkReady){
-      kkSearchAddress(project.cover.address, project.coords);
-    } else if(kkSdkLoaded){
-      kkOnSdkReady();
+    if(window.kakao && window.kakao.maps && kakao.maps.Map){
+      // 새 DOM 맵 컨테이너에 재바인딩
+      if(kkInit()){
+        kkSearchAddress(project.cover.address, project.coords);
+      }
+    } else {
+      // SDK 미로드 상태 - 폴링 핸들러가 처리
+      window.__pendingProject = project;
     }
-    // 페이지 로드시 SDK가 아직 안 됐으면 SDK 준비 후 자동 검색되도록 저장
-    window.__pendingProject = project;
-  }, 100);
+  }, 200);
 };
 </script>
 
