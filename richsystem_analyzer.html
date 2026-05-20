@@ -2009,7 +2009,7 @@ genBtn.addEventListener('click', async () => {
   genBtn.classList.add('loading');
   genBtn.disabled = true;
   
-  // 베이스 프로젝트 선정 (사전입력 우선)
+  // 1. 베이스 프로젝트 선정 (사전입력 우선)
   const matched = findProject(addr, projInput.value);
   let baseProject, isMatched, regionLabel;
   
@@ -2029,10 +2029,30 @@ genBtn.addEventListener('click', async () => {
     }
   }
   
-  // 백엔드 실데이터 조회 시도 (병렬, 5초 timeout)
+  // 2. ★ 베이스를 즉시 표시 — 지도/보고서 둘 다 빠르게 렌더 (사용자 대기 시간 없음)
+  applyProject(baseProject, isMatched, regionLabel);
+  genBtn.classList.remove('loading');
+  genBtn.disabled = false;
+  document.getElementById('report').scrollIntoView({behavior:'smooth', block:'start'});
+  
+  // 3. 백그라운드에서 백엔드 실데이터 fetch (60초 timeout - 콜드스타트 대응)
+  // 상태 표시: 보고서 알림 배너에 표시
+  const notice = document.getElementById('reportNotice');
+  const rnTitle = document.getElementById('rn-title');
+  const rnSub = document.getElementById('rn-sub');
+  if(notice && rnTitle && rnSub){
+    notice.style.background = '#FFF8E1';
+    notice.style.borderLeftColor = '#FFD700';
+    rnTitle.textContent = '⏳ 국토부 실거래 데이터 조회 중...';
+    rnTitle.style.color = '#6B5500';
+    rnSub.innerHTML = '백엔드 호출 중 (첫 호출은 콜드스타트로 30~50초 소요 가능)';
+    rnSub.style.color = '#8B7000';
+    notice.style.display = 'flex';
+  }
+  
   let realData = null;
   try {
-    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 15000)); // 15초 (콜드스타트 대응)
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 60000));
     realData = await Promise.race([
       fetchRealData(addr, projInput.value),
       timeoutPromise
@@ -2041,30 +2061,32 @@ genBtn.addEventListener('click', async () => {
     console.warn('Backend fetch error:', e);
   }
   
-  // 실데이터 있으면 병합, 없으면 템플릿 그대로
-  const finalProject = realData ? mergeRealData(baseProject, realData) : baseProject;
-  
-  // 적용
-  applyProject(finalProject, isMatched && !realData, regionLabel);
-  
-  // 실데이터 적용 알림
+  // 4. 실데이터 받으면 병합 + 재렌더링
   if(realData){
-    const notice = document.getElementById('reportNotice');
-    if(notice){
-      const m = finalProject._realDataMeta;
+    const merged = mergeRealData(baseProject, realData);
+    applyProject(merged, false, regionLabel);
+    
+    // 성공 배너
+    if(notice && rnTitle && rnSub){
+      const m = merged._realDataMeta || {};
       notice.style.background = '#E8F2EC';
       notice.style.borderLeftColor = '#1F7A4D';
-      document.getElementById('rn-title').textContent = '✓ 국토부 실거래 데이터 적용';
-      document.getElementById('rn-title').style.color = '#0F4A2C';
-      document.getElementById('rn-sub').innerHTML = `${m.sigungu} 지역 · 최근 ${m.months}개월 · 총 ${m.transactions}건 실거래 분석`;
-      document.getElementById('rn-sub').style.color = '#1F7A4D';
-      notice.style.display = 'flex';
+      rnTitle.textContent = '✓ 국토부 실거래 데이터 적용';
+      rnTitle.style.color = '#0F4A2C';
+      rnSub.innerHTML = `${m.sigungu || ''} · 최근 ${m.months || 3}개월 · 총 ${m.transactions || '?'}건 실거래 분석`;
+      rnSub.style.color = '#1F7A4D';
+    }
+  } else {
+    // 실패 - 노랑 배너 (템플릿 표시 알림)
+    if(notice && rnTitle && rnSub){
+      notice.style.background = '#FFF8E1';
+      notice.style.borderLeftColor = '#FFA500';
+      rnTitle.textContent = 'ⓘ 템플릿 데이터로 표시 중';
+      rnTitle.style.color = '#7A4F00';
+      rnSub.innerHTML = '백엔드 시간 초과 (60초) — 콜드스타트시 잠시 후 재시도하면 실데이터 적용됨';
+      rnSub.style.color = '#8B5C00';
     }
   }
-  
-  genBtn.classList.remove('loading');
-  genBtn.disabled = false;
-  document.getElementById('report').scrollIntoView({behavior:'smooth', block:'start'});
 });
 
 // ===== 지역 데이터베이스 (임의 주소 지원) =====
