@@ -1,0 +1,3188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#0F2043">
+<title>(주)리치시스템 | 분양현장 시세조사·전략수립 자동화</title>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=222563608848ddea15db9b5ddf83e859&autoload=false&libraries=services"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{
+  --navy:#0F2043;
+  --navy-dark:#06101F;
+  --navy-mid:#1A2F5A;
+  --gold:#FFD700;
+  --gold-deep:#C9A961;
+  --gold-soft:#E8D49A;
+  --cream:#F4ECD8;
+  --cream-light:#FBF7EC;
+  --ink:#1A1A1A;
+  --ink-mute:#5B5B5B;
+  --line:rgba(15,32,67,0.12);
+  --line-strong:rgba(15,32,67,0.25);
+  --warn:#C9362C;
+  --pos:#1F7A4D;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Malgun Gothic','Apple SD Gothic Neo','맑은 고딕','Noto Sans KR',sans-serif;
+  background:var(--cream-light);
+  color:var(--ink);
+  line-height:1.55;
+  font-size:15px;
+  -webkit-text-size-adjust:100%;
+}
+
+/* ===== TOP BAR ===== */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);
+  color:#fff;
+  padding:14px 18px;
+  display:flex;justify-content:space-between;align-items:center;
+  box-shadow:0 2px 16px rgba(15,32,67,0.25);
+  border-bottom:2px solid var(--gold);
+}
+.topbar .brand{display:flex;align-items:center;gap:10px}
+.topbar .logo{
+  width:32px;height:32px;border-radius:6px;
+  background:linear-gradient(135deg,var(--gold) 0%,var(--gold-deep) 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;color:var(--navy-dark);font-size:14px;letter-spacing:-0.5px;
+}
+.topbar .brand-txt{display:flex;flex-direction:column;line-height:1.1}
+.topbar .brand-txt b{font-size:14px;letter-spacing:-0.3px}
+.topbar .brand-txt span{font-size:10px;color:var(--gold-soft);letter-spacing:0.5px;margin-top:2px}
+.topbar .ver{font-size:10px;padding:4px 8px;background:rgba(255,215,0,0.15);color:var(--gold);border:1px solid var(--gold-deep);border-radius:3px;letter-spacing:1px}
+
+/* ===== INPUT PANEL ===== */
+.input-panel{
+  background:linear-gradient(180deg,var(--navy) 0%,var(--navy-dark) 100%);
+  color:#fff;
+  padding:24px 18px 28px;
+  border-bottom:1px solid rgba(255,215,0,0.2);
+}
+.input-panel h2{
+  margin:0 0 4px;
+  font-size:18px;letter-spacing:-0.3px;
+  display:flex;align-items:center;gap:8px;
+}
+.input-panel h2::before{content:'';width:18px;height:2px;background:var(--gold)}
+.input-panel .sub{color:var(--gold-soft);font-size:11px;letter-spacing:1px;margin-bottom:18px}
+.dropzone{
+  border:1.5px dashed rgba(255,215,0,0.45);
+  background:rgba(255,255,255,0.04);
+  border-radius:8px;
+  padding:22px 14px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  margin-bottom:14px;
+}
+.dropzone:hover,.dropzone.drag{
+  background:rgba(255,215,0,0.08);border-color:var(--gold);
+}
+.dropzone .icon{font-size:28px;margin-bottom:6px;display:block}
+.dropzone .main{font-size:13px;color:#fff;margin-bottom:3px;font-weight:600}
+.dropzone .desc{font-size:11px;color:var(--gold-soft);letter-spacing:0.5px}
+.dropzone .filename{font-size:12px;color:var(--gold);margin-top:8px;display:none;word-break:break-all}
+.dropzone.has-file .filename{display:block}
+.dropzone.has-file .desc{display:none}
+input[type=file]{display:none}
+
+.field-row{display:grid;gap:10px;margin-bottom:14px}
+.field-row.cols{grid-template-columns:1fr 1fr}
+.field label{display:block;font-size:11px;color:var(--gold-soft);letter-spacing:1px;margin-bottom:5px;font-weight:600}
+.field input,.field select{
+  width:100%;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,215,0,0.25);
+  border-radius:5px;
+  padding:11px 12px;
+  color:#fff;
+  font-size:14px;
+  font-family:inherit;
+  outline:none;
+  transition:all .2s;
+}
+.field input:focus,.field select:focus{
+  border-color:var(--gold);background:rgba(255,255,255,0.10);
+}
+.field input::placeholder{color:rgba(232,212,154,0.5)}
+
+/* Address main input - prominent */
+.field.address-main input{
+  font-size:16px;
+  padding:14px 14px;
+  background:rgba(255,255,255,0.10);
+  border-color:rgba(255,215,0,0.45);
+}
+.field.address-main input:focus{
+  background:rgba(255,255,255,0.14);
+  box-shadow:0 0 0 3px rgba(255,215,0,0.15);
+}
+.addr-hint{
+  font-size:11px;color:var(--gold-soft);
+  margin-top:6px;letter-spacing:0.3px;
+  padding-left:2px;
+}
+.addr-hint::before{
+  content:'✓ ';color:var(--gold);font-weight:800;
+}
+.req,.opt{
+  display:inline-block;
+  font-size:9px;font-weight:800;letter-spacing:1px;
+  padding:1px 5px;border-radius:2px;
+  margin-left:4px;vertical-align:middle;
+}
+.req{background:var(--gold);color:var(--navy-dark)}
+.opt{background:rgba(255,255,255,0.10);color:var(--gold-soft);border:1px solid rgba(255,215,0,0.25)}
+
+/* Loading spinner */
+.btn.primary{position:relative;overflow:hidden}
+.btn-loading{display:none;align-items:center;gap:8px;justify-content:center}
+.btn.loading .btn-txt{display:none}
+.btn.loading .btn-loading{display:inline-flex}
+.spinner{
+  width:14px;height:14px;
+  border:2px solid rgba(15,32,67,0.2);
+  border-top-color:var(--navy-dark);
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Collapsible PDF option */
+.opt-block{
+  margin-top:14px;
+  border:1px solid rgba(255,215,0,0.2);
+  border-radius:5px;
+  background:rgba(255,255,255,0.03);
+  overflow:hidden;
+}
+.opt-block summary{
+  list-style:none;cursor:pointer;
+  padding:11px 14px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;color:var(--gold-soft);
+  letter-spacing:-0.2px;font-weight:600;
+  user-select:none;
+}
+.opt-block summary::-webkit-details-marker{display:none}
+.opt-block .opt-arrow{
+  color:var(--gold);font-size:14px;
+  transition:transform .2s;
+}
+.opt-block[open] .opt-arrow{transform:rotate(180deg)}
+.opt-block[open] summary{border-bottom:1px solid rgba(255,215,0,0.15)}
+.opt-block .dropzone{margin:14px;border:1.5px dashed rgba(255,215,0,0.35)}
+
+/* API status row */
+.api-status{
+  display:flex;align-items:center;gap:6px;
+  flex-wrap:wrap;
+  margin-top:14px;padding-top:12px;
+  border-top:1px solid rgba(255,215,0,0.12);
+  font-size:10px;color:var(--gold-soft);
+  letter-spacing:0.5px;
+}
+.api-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#444;
+  display:inline-block;
+}
+.api-dot.ok{
+  background:#3DD17C;
+  box-shadow:0 0 6px rgba(61,209,124,0.6);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:1}
+  50%{opacity:0.5}
+}
+.api-name{margin-right:8px;font-weight:600}
+
+/* Report notice banner */
+.report-notice{
+  background:#FFF8E1;
+  border-left:4px solid var(--gold-deep);
+  padding:12px 14px;
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:12px;color:#5A4A1A;
+  border-bottom:1px solid var(--line);
+}
+.rn-ico{font-size:18px;flex-shrink:0}
+.rn-txt{flex:1;line-height:1.5}
+.rn-txt b{display:block;color:#5A4A1A;font-size:13px;margin-bottom:2px}
+.rn-txt span{font-size:11px;color:#856B2A}
+
+/* Embedded Kakao map */
+.kakao-wrap{
+  background:#07111f;
+  border-radius:8px;
+  overflow:hidden;
+  margin:14px 0 8px;
+  border:1px solid var(--line);
+  position:relative;
+}
+.kakao-status{
+  padding:10px 14px;
+  background:linear-gradient(180deg,#0F2043,#07111f);
+  color:var(--gold);
+  font-size:11px;letter-spacing:0.5px;font-weight:600;
+  border-bottom:1px solid rgba(201,169,97,.25);
+  display:flex;align-items:center;gap:8px;
+}
+.kakao-status .ks-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#3DD17C;
+  box-shadow:0 0 6px rgba(61,209,124,.6);
+  animation:pulse 2s ease-in-out infinite;
+}
+.kakao-status .ks-dot.err{background:#FF6B6B;animation:none}
+.kakao-status .ks-dot.load{background:#FFD700;animation:pulse 1s ease-in-out infinite}
+.kakaoMap{width:100%;height:300px;background:#0F2043}
+.kakao-chips{
+  display:flex;gap:5px;
+  padding:8px 10px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  background:#0F2043;
+  border-top:1px solid rgba(201,169,97,.15);
+}
+.kakao-chips::-webkit-scrollbar{display:none}
+.kk-chip{
+  flex-shrink:0;padding:6px 11px;
+  border-radius:14px;font-size:11px;font-weight:700;
+  background:rgba(255,255,255,.06);color:#c9d2e5;
+  border:1px solid rgba(255,255,255,.12);cursor:pointer;
+  white-space:nowrap;
+}
+.kk-chip.active{
+  background:var(--gold);color:var(--navy-dark);
+  border-color:var(--gold);
+}
+.kk-chip .cnt{opacity:.75;margin-left:3px;font-weight:800}
+
+/* Kakao label overlays */
+.kk-label{
+  position:relative;
+  transform:translate(-50%,-100%);
+  white-space:nowrap;
+  padding:5px 8px;
+  border-radius:14px;
+  background:#07111f;color:#fff;
+  font-size:10px;font-weight:900;
+  box-shadow:0 2px 8px rgba(0,0,0,.45);
+  border:1.5px solid;
+  cursor:pointer;
+}
+.kk-label.main{
+  background:var(--gold);color:var(--navy-dark);
+  border:2px solid #fff;
+  box-shadow:0 3px 12px rgba(255,215,0,.55);
+  font-size:11px;
+}
+.kk-label.work{border-color:#e0bd7e}
+.kk-label.shop{border-color:#6ba3e0}
+.kk-label.medical{border-color:#e06b7e}
+.kk-label.school{border-color:#7ee0a3}
+.kk-label.park{border-color:#a37ee0}
+.kk-label.subway{border-color:#8bd3ff}
+.kk-info{padding:8px 11px;min-width:180px;color:#111;font-size:11px;line-height:1.45}
+.kk-info b{font-size:12px;display:block;margin-bottom:3px}
+.kk-info .dist{color:#7b5a16;font-weight:800;margin:3px 0;font-size:10px}
+.kk-info a{color:#1565c0;text-decoration:none;font-weight:800;font-size:10px}
+
+/* Price comparison chart */
+.pchart{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:14px 12px;
+  margin:8px 0 6px;
+}
+.pchart-title{
+  font-size:10px;letter-spacing:1px;
+  color:var(--ink-mute);
+  text-align:center;
+  margin-bottom:10px;
+  font-weight:700;
+}
+.prow{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 0;
+  font-size:11px;
+}
+.prow + .prow{border-top:1px dashed var(--line)}
+.prow.subject{
+  background:linear-gradient(90deg,rgba(255,215,0,0.08),transparent);
+  margin:4px -12px;padding:7px 12px;
+  border-radius:3px;
+  position:relative;
+}
+.prow.subject::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;background:var(--gold);
+  border-radius:2px 0 0 2px;
+}
+.pname{
+  flex:0 0 100px;
+  font-size:10px;color:var(--ink-mute);
+  text-align:right;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.3;
+}
+.prow.subject .pname{
+  color:var(--navy);font-weight:800;font-size:11px;
+}
+.pbar{
+  flex:1;
+  height:16px;
+  background:var(--cream);
+  border-radius:2px;
+  overflow:hidden;
+  position:relative;
+  min-width:80px;
+}
+.pfill{
+  height:100%;
+  background:linear-gradient(90deg,#5A6B85 0%,var(--navy) 100%);
+  border-radius:2px;
+  transition:width 0.6s ease;
+}
+.prow.subject .pfill{
+  background:linear-gradient(90deg,var(--gold) 0%,var(--gold-deep) 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2);
+}
+.pval{
+  flex:0 0 56px;
+  text-align:right;
+  font-size:11px;
+  font-weight:700;
+  color:var(--navy);
+  font-variant-numeric:tabular-nums;
+}
+.pval small{font-size:9px;color:var(--ink-mute);font-weight:600;margin-left:1px}
+.prow.subject .pval{color:var(--navy);font-weight:800}
+.pchart-axis{
+  display:flex;justify-content:space-between;
+  margin-top:8px;padding-top:8px;
+  border-top:1px solid var(--line);
+  font-size:9px;color:var(--ink-mute);
+  letter-spacing:0.5px;
+}
+.pchart-axis b{color:var(--gold-deep);font-weight:800}
+@media (max-width:380px){
+  .pname{flex:0 0 80px;font-size:9px}
+  .pval{flex:0 0 48px;font-size:10px}
+}
+@media print{
+  .pchart{background:#fff !important;border:1px solid #ddd !important}
+  .prow.subject{background:#F4ECD8 !important}
+  .prow.subject::before{background:#FFD700 !important}
+  .pbar{background:#F4ECD8 !important}
+  .pfill{background:linear-gradient(90deg,#5A6B85 0%,#0F2043 100%) !important}
+  .prow.subject .pfill{background:linear-gradient(90deg,#FFD700 0%,#C9A961 100%) !important}
+}
+
+.btn-row{display:flex;gap:8px;margin-top:6px}
+.btn{
+  flex:1;
+  border:none;cursor:pointer;
+  padding:14px 16px;
+  border-radius:5px;
+  font-family:inherit;font-size:14px;font-weight:700;
+  letter-spacing:-0.3px;
+  transition:all .15s;
+}
+.btn.primary{
+  background:linear-gradient(135deg,var(--gold) 0%,var(--gold-deep) 100%);
+  color:var(--navy-dark);
+  box-shadow:0 2px 10px rgba(255,215,0,0.25);
+}
+.btn.primary:active{transform:translateY(1px)}
+.btn.ghost{
+  background:transparent;color:var(--gold-soft);
+  border:1px solid rgba(255,215,0,0.3);
+}
+
+/* ===== REPORT ===== */
+.report{padding:0;background:var(--cream-light)}
+
+/* slide / section */
+.sec{
+  background:#fff;
+  margin:0;
+  padding:32px 20px 36px;
+  position:relative;
+  border-bottom:8px solid var(--cream);
+  scroll-margin-top:60px;
+}
+.sec:nth-of-type(odd){background:var(--cream-light)}
+
+.sec-num{
+  display:inline-block;
+  font-size:10px;letter-spacing:3px;
+  color:var(--gold-deep);font-weight:700;
+  margin-bottom:6px;
+}
+.sec h3{
+  margin:0 0 4px;
+  font-size:22px;
+  color:var(--navy);
+  letter-spacing:-0.5px;
+  line-height:1.25;
+}
+.sec .lead{
+  color:var(--ink-mute);
+  font-size:13px;
+  margin:0 0 22px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
+  letter-spacing:-0.2px;
+}
+.sec h4{
+  margin:22px 0 10px;
+  font-size:14px;color:var(--navy);
+  display:flex;align-items:center;gap:8px;
+  letter-spacing:-0.2px;
+}
+.sec h4::before{
+  content:'';width:3px;height:14px;background:var(--gold);border-radius:1px;
+}
+
+/* COVER */
+.cover{
+  background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 60%,var(--navy-mid) 100%);
+  color:#fff;
+  padding:48px 22px 56px;
+  position:relative;overflow:hidden;
+  border-bottom:0;
+}
+.cover::before{
+  content:'';position:absolute;top:0;right:0;width:140px;height:140px;
+  background:radial-gradient(circle at center,rgba(255,215,0,0.18) 0%,transparent 60%);
+}
+.cover::after{
+  content:'';position:absolute;left:-20px;bottom:-20px;width:200px;height:200px;
+  border:1px solid rgba(255,215,0,0.1);border-radius:50%;
+}
+.cover .badge{
+  display:inline-block;
+  font-size:10px;letter-spacing:3px;color:var(--gold);
+  padding:5px 10px;border:1px solid var(--gold-deep);border-radius:2px;
+  margin-bottom:18px;font-weight:700;
+}
+.cover h1{
+  margin:0 0 8px;
+  font-size:30px;line-height:1.15;
+  letter-spacing:-1px;
+  font-weight:800;
+}
+.cover .loc{
+  color:var(--gold-soft);font-size:13px;
+  letter-spacing:0.5px;margin-bottom:24px;
+}
+.cover .gold-bar{
+  width:48px;height:2px;background:var(--gold);
+  margin-bottom:20px;
+}
+.cover .meta{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;
+  font-size:12px;
+  padding-top:18px;border-top:1px solid rgba(255,215,0,0.18);
+  margin-top:24px;
+}
+.cover .meta dt{color:var(--gold-soft);letter-spacing:1px;font-size:10px;margin-bottom:3px}
+.cover .meta dd{margin:0;color:#fff;font-weight:600;font-size:13px}
+.cover .footer{
+  margin-top:30px;padding-top:18px;
+  border-top:1px solid rgba(255,215,0,0.18);
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:10px;color:var(--gold-soft);letter-spacing:1px;
+}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 18px}
+.kpi{
+  background:var(--cream);
+  border-left:3px solid var(--gold);
+  padding:14px 12px;border-radius:4px;
+}
+.kpi .lab{font-size:10px;color:var(--ink-mute);letter-spacing:1px;margin-bottom:4px;font-weight:600}
+.kpi .val{font-size:20px;color:var(--navy);font-weight:800;letter-spacing:-0.5px;line-height:1.1}
+.kpi .val small{font-size:11px;color:var(--ink-mute);font-weight:600;margin-left:2px}
+.kpi .delta{font-size:10px;margin-top:3px;color:var(--pos);font-weight:700}
+.kpi .delta.neg{color:var(--warn)}
+
+/* Verdict box */
+.verdict{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);
+  color:#fff;padding:18px 16px;border-radius:6px;
+  margin:14px 0 8px;
+  position:relative;
+  border:1px solid var(--gold-deep);
+}
+.verdict::before{
+  content:'전문가 진단';
+  position:absolute;top:-9px;left:14px;
+  background:var(--gold);color:var(--navy-dark);
+  font-size:10px;font-weight:800;letter-spacing:1.5px;
+  padding:3px 8px;border-radius:2px;
+}
+.verdict .v-main{font-size:15px;font-weight:700;letter-spacing:-0.3px;margin-top:4px;color:var(--gold-soft)}
+.verdict .v-sub{font-size:12px;color:#fff;margin-top:6px;line-height:1.6}
+
+/* Bullet block */
+.blist{margin:0;padding:0;list-style:none}
+.blist li{
+  padding:10px 0 10px 22px;
+  position:relative;
+  border-bottom:1px dashed var(--line);
+  font-size:13px;
+  line-height:1.55;
+}
+.blist li:last-child{border-bottom:0}
+.blist li::before{
+  content:'';position:absolute;left:4px;top:16px;
+  width:6px;height:6px;background:var(--gold);
+  transform:rotate(45deg);
+}
+.blist li b{color:var(--navy);font-weight:700}
+.blist li .tag{
+  display:inline-block;font-size:10px;padding:2px 6px;
+  background:var(--navy);color:var(--gold);
+  border-radius:2px;margin-right:6px;letter-spacing:0.5px;font-weight:700;
+}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0 6px;border-radius:5px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:12px;min-width:480px}
+thead th{
+  background:var(--navy);color:#fff;
+  padding:10px 8px;text-align:center;
+  font-weight:600;letter-spacing:-0.3px;
+  font-size:11px;
+  border-right:1px solid rgba(255,215,0,0.2);
+}
+thead th:last-child{border-right:0}
+tbody td{
+  padding:9px 8px;border-bottom:1px solid var(--line);
+  text-align:center;
+}
+tbody tr:nth-child(odd) td{background:var(--cream-light)}
+tbody tr.subject td{
+  background:var(--navy)!important;
+  color:#fff!important;font-weight:700;
+  border-bottom:1px solid var(--gold);
+}
+tbody tr.subject td:first-child{color:var(--gold)!important}
+tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody td.name{text-align:left;font-weight:600;color:var(--navy)}
+.tbl-cap{font-size:10px;color:var(--ink-mute);text-align:right;margin-top:4px;letter-spacing:0.5px}
+
+/* Persona cards */
+.personas{display:grid;gap:10px}
+.persona{
+  background:#fff;border:1px solid var(--line);
+  border-left:4px solid var(--gold-deep);
+  padding:12px 14px;border-radius:4px;
+}
+.persona .ptag{
+  display:inline-block;font-size:10px;font-weight:800;
+  color:var(--navy);background:var(--gold-soft);
+  padding:2px 7px;border-radius:2px;letter-spacing:1px;
+  margin-bottom:6px;
+}
+.persona .ptitle{font-size:13px;color:var(--navy);font-weight:700;margin-bottom:3px}
+.persona .pdesc{font-size:12px;color:var(--ink-mute);line-height:1.5}
+
+/* Timeline */
+.timeline{position:relative;padding-left:18px;margin:10px 0}
+.timeline::before{
+  content:'';position:absolute;left:5px;top:6px;bottom:6px;
+  width:1px;background:var(--gold-deep);
+}
+.tl-item{margin-bottom:14px;position:relative}
+.tl-item::before{
+  content:'';position:absolute;left:-17px;top:5px;
+  width:11px;height:11px;border-radius:50%;
+  background:var(--gold);border:2px solid var(--navy);
+}
+.tl-week{font-size:10px;color:var(--gold-deep);letter-spacing:2px;font-weight:800;margin-bottom:2px}
+.tl-title{font-size:14px;color:var(--navy);font-weight:700;margin-bottom:3px}
+.tl-desc{font-size:12px;color:var(--ink-mute);line-height:1.55}
+.tl-kpi{font-size:11px;color:var(--navy);background:var(--cream);padding:4px 8px;border-radius:3px;display:inline-block;margin-top:5px;font-weight:600}
+
+/* Cost simulation */
+.sim{background:var(--cream);border-radius:6px;padding:14px;margin:8px 0}
+.sim-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:8px 0;border-bottom:1px dashed var(--line-strong);
+  font-size:13px;
+}
+.sim-row:last-child{border-bottom:0;border-top:2px solid var(--navy);margin-top:4px;padding-top:10px;font-weight:800;color:var(--navy);font-size:14px}
+.sim-row .lab{color:var(--ink-mute);font-size:12px}
+.sim-row .val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--navy)}
+.sim-row.pos .val{color:var(--pos)}
+
+/* Materials */
+.mats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mat{
+  background:#fff;border:1px solid var(--line);
+  padding:10px;border-radius:4px;
+  font-size:12px;text-align:center;
+  position:relative;
+}
+.mat b{display:block;color:var(--navy);font-size:13px;margin-bottom:2px}
+.mat small{color:var(--ink-mute);font-size:10px;letter-spacing:0.5px}
+.mat.full{grid-column:span 2;background:var(--navy);color:#fff;border-color:var(--gold)}
+.mat.full b{color:var(--gold)}
+.mat.full small{color:var(--gold-soft)}
+
+/* Quote / note */
+.note{
+  font-size:11px;color:var(--ink-mute);
+  background:var(--cream);padding:10px 12px;border-radius:4px;
+  border-left:3px solid var(--gold-deep);
+  line-height:1.6;margin-top:10px;
+}
+.note b{color:var(--navy)}
+
+/* SWOT */
+.swot{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.swot-cell{padding:12px 11px;border-radius:4px;font-size:12px;line-height:1.5}
+.swot-cell .stitle{font-size:10px;letter-spacing:2px;font-weight:800;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.swot-cell .stitle::before{content:'';width:8px;height:8px}
+.swot-cell.s{background:#E8F2EC;color:#0F4A2C}
+.swot-cell.s .stitle{color:#1F7A4D}
+.swot-cell.s .stitle::before{background:#1F7A4D}
+.swot-cell.w{background:#FBEFEC;color:#6A2A23}
+.swot-cell.w .stitle{color:#C9362C}
+.swot-cell.w .stitle::before{background:#C9362C}
+.swot-cell.o{background:var(--cream);color:#5A4A1A}
+.swot-cell.o .stitle{color:var(--gold-deep)}
+.swot-cell.o .stitle::before{background:var(--gold-deep)}
+.swot-cell.t{background:#EAEAF0;color:#3B3B5A}
+.swot-cell.t .stitle{color:#3B3B5A}
+.swot-cell.t .stitle::before{background:#3B3B5A}
+
+/* Channel mix */
+.chmix{display:grid;gap:6px;margin:8px 0}
+.ch-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.ch-row .ch-name{flex:0 0 90px;font-weight:700;color:var(--navy);font-size:11px}
+.ch-row .ch-bar{flex:1;height:14px;background:var(--cream);border-radius:2px;overflow:hidden;position:relative}
+.ch-row .ch-fill{height:100%;background:linear-gradient(90deg,var(--gold) 0%,var(--gold-deep) 100%);border-radius:2px}
+.ch-row .ch-pct{flex:0 0 32px;text-align:right;font-weight:700;color:var(--navy);font-size:11px}
+
+/* Final */
+.final{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);
+  color:#fff;padding:36px 22px 44px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.final::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:100px;height:1px;background:var(--gold);
+}
+.final .ft{font-size:11px;color:var(--gold);letter-spacing:4px;margin-bottom:14px;font-weight:700}
+.final h3{color:#fff;font-size:20px;margin:0 0 12px;line-height:1.35;letter-spacing:-0.5px}
+.final h3 em{color:var(--gold);font-style:normal}
+.final .fmsg{font-size:13px;color:var(--gold-soft);line-height:1.7;max-width:340px;margin:0 auto}
+.final .sign{
+  margin-top:28px;padding-top:18px;border-top:1px solid rgba(255,215,0,0.2);
+  font-size:11px;color:var(--gold-soft);letter-spacing:1.5px;
+}
+.final .sign b{color:var(--gold);letter-spacing:0;font-size:13px;display:block;margin-bottom:2px}
+
+/* Bottom actions */
+.actions{
+  position:sticky;bottom:0;z-index:40;
+  background:rgba(255,255,255,0.96);
+  backdrop-filter:saturate(180%) blur(8px);
+  -webkit-backdrop-filter:saturate(180%) blur(8px);
+  padding:10px 14px;
+  display:flex;gap:6px;
+  border-top:1px solid var(--line);
+}
+.act-btn{
+  flex:1;padding:11px 8px;font-size:11px;
+  font-weight:700;letter-spacing:0.5px;
+  background:var(--navy);color:#fff;border:none;border-radius:5px;
+  cursor:pointer;font-family:inherit;
+}
+.act-btn.gold{background:linear-gradient(135deg,var(--gold) 0%,var(--gold-deep) 100%);color:var(--navy-dark)}
+.act-btn:active{opacity:0.85}
+
+/* Mini section nav */
+.minimap{
+  position:fixed;right:6px;top:50%;transform:translateY(-50%);z-index:30;
+  display:flex;flex-direction:column;gap:6px;
+}
+.minimap a{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--line-strong);
+  display:block;transition:all .2s;
+}
+.minimap a.active{background:var(--gold);transform:scale(1.4)}
+
+@media (max-width:380px){
+  .kpis{grid-template-columns:1fr}
+  .cover h1{font-size:26px}
+  .sec h3{font-size:20px}
+  .field-row.cols{grid-template-columns:1fr}
+  .mats{grid-template-columns:1fr}
+  .mat.full{grid-column:span 1}
+  .swot{grid-template-columns:1fr}
+}
+@media (min-width:768px){
+  body{font-size:16px}
+  .input-panel,.sec,.cover,.final{padding-left:48px;padding-right:48px}
+  .sec h3{font-size:26px}
+  .cover h1{font-size:38px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .mats{grid-template-columns:repeat(4,1fr)}
+  .mat.full{grid-column:span 2}
+  .topbar{padding:16px 32px}
+}
+@media (min-width:1024px){
+  body{max-width:900px;margin:0 auto;box-shadow:0 0 40px rgba(15,32,67,0.08)}
+}
+@media print{
+  /* 색상 강제 적용 (브라우저 기본 절약 동작 차단) */
+  *,*::before,*::after{
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+    color-adjust:exact !important;
+  }
+  /* UI 요소 숨김 */
+  .topbar,.input-panel,.actions,.minimap,
+  .kakao-status,.kakao-chips,
+  #reportNotice,
+  .opt-block{display:none !important}
+  
+  /* 페이지 설정 */
+  @page{
+    size:A4;
+    margin:0;
+  }
+  html,body{
+    background:#fff !important;
+    font-size:10pt;
+    margin:0;padding:0;
+  }
+  body{max-width:none !important;box-shadow:none !important}
+  
+  /* 표지: 다크 네이비 배경 유지 */
+  .cover{
+    background:linear-gradient(135deg,#06101F 0%,#0F2043 60%,#1A2F5A 100%) !important;
+    color:#fff !important;
+    padding:48px 44px 56px !important;
+    page-break-after:always;
+    min-height:100vh;
+    position:relative;
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+  }
+  .cover *{color:inherit !important}
+  .cover h1{color:#fff !important;font-size:32pt !important}
+  .cover .loc,.cover .meta dt,.cover .footer{color:#E8D49A !important}
+  .cover .meta dd{color:#fff !important}
+  .cover .badge{
+    background:transparent !important;
+    color:#FFD700 !important;
+    border:1px solid #C9A961 !important;
+  }
+  .cover .gold-bar{background:#FFD700 !important}
+  
+  /* 본문 섹션 */
+  .sec{
+    page-break-inside:avoid;
+    padding:28px 36px !important;
+    background:#fff !important;
+    border-bottom:1px solid #ddd !important;
+  }
+  .sec h3{color:#0F2043 !important;font-size:18pt !important}
+  .sec h4{color:#0F2043 !important;font-size:11pt !important}
+  .sec-num{color:#C9A961 !important}
+  
+  /* KPI 카드 - 크림 배경 유지 */
+  .kpi{
+    background:#F4ECD8 !important;
+    border-left:3px solid #FFD700 !important;
+  }
+  .kpi .val{color:#0F2043 !important}
+  
+  /* 진단 박스 - 네이비 배경 유지 */
+  .verdict{
+    background:linear-gradient(135deg,#0F2043 0%,#06101F 100%) !important;
+    color:#fff !important;
+    border:1px solid #C9A961 !important;
+  }
+  .verdict::before{
+    background:#FFD700 !important;
+    color:#06101F !important;
+  }
+  .verdict .v-main{color:#E8D49A !important}
+  .verdict .v-sub{color:#fff !important}
+  
+  /* 테이블 헤더 - 네이비 유지 */
+  thead th{
+    background:#0F2043 !important;
+    color:#fff !important;
+  }
+  tbody tr.subject td{
+    background:#0F2043 !important;
+    color:#fff !important;
+  }
+  tbody tr.subject td:first-child{color:#FFD700 !important}
+  tbody tr:nth-child(odd) td{background:#FBF7EC !important}
+  
+  /* SWOT 컬러 셀 */
+  .swot-cell.s{background:#E8F2EC !important;color:#0F4A2C !important}
+  .swot-cell.w{background:#FBEFEC !important;color:#6A2A23 !important}
+  .swot-cell.o{background:#F4ECD8 !important;color:#5A4A1A !important}
+  .swot-cell.t{background:#EAEAF0 !important;color:#3B3B5A !important}
+  
+  /* 노트·태그 */
+  .note{
+    background:#F4ECD8 !important;
+    border-left:3px solid #C9A961 !important;
+  }
+  .blist li .tag{background:#0F2043 !important;color:#FFD700 !important}
+  .ptag{background:#E8D49A !important;color:#0F2043 !important}
+  
+  /* 무상품목 */
+  .mat{background:#fff !important;border:1px solid #ddd !important}
+  .mat.full{background:#0F2043 !important;color:#fff !important;border-color:#FFD700 !important}
+  .mat.full b{color:#FFD700 !important}
+  .mat b{color:#0F2043 !important}
+  
+  /* 채널 믹스 막대 */
+  .ch-bar{background:#F4ECD8 !important}
+  .ch-fill{background:linear-gradient(90deg,#FFD700 0%,#C9A961 100%) !important}
+  
+  /* 타임라인 */
+  .tl-item::before{background:#FFD700 !important;border:2px solid #0F2043 !important}
+  .tl-kpi{background:#F4ECD8 !important}
+  
+  /* 자금 시뮬레이션 */
+  .sim{background:#F4ECD8 !important}
+  
+  /* 결론 - 네이비 배경 */
+  .final{
+    background:linear-gradient(135deg,#0F2043 0%,#06101F 100%) !important;
+    color:#fff !important;
+    padding:48px 44px 56px !important;
+    page-break-before:auto;
+  }
+  .final *{color:inherit !important}
+  .final h3{color:#fff !important}
+  .final h3 em{color:#FFD700 !important}
+  .final .ft,.final .fmsg,.final .sign{color:#E8D49A !important}
+  .final .sign b{color:#FFD700 !important}
+  
+  /* 지도는 인쇄에서 큰 의미 없음 - 숨김 처리 */
+  .kakao-wrap{
+    border:1px solid #ddd !important;
+    background:#fff !important;
+  }
+  .kakaoMap{
+    background:#F4ECD8 !important;
+    height:200px !important;
+    position:relative;
+  }
+  .kakaoMap::after{
+    content:'📍 카카오 실측 인프라 (웹 버전에서만 표시)';
+    position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    color:#5B5B5B;font-size:9pt;font-weight:600;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">R</div>
+    <div class="brand-txt">
+      <b>(주)리치시스템</b>
+      <span>SALES MARKETING INTELLIGENCE</span>
+    </div>
+  </div>
+  <div class="ver">v 2.0 WEB</div>
+</div>
+
+<!-- ============ INPUT PANEL ============ -->
+<section class="input-panel" id="input">
+  <h2>현장 정보 입력</h2>
+  <div class="sub">SITE INTAKE FORM</div>
+
+  <!-- 주소 메인 입력 -->
+  <div class="field-row">
+    <div class="field address-main">
+      <label>주소 또는 지번 <span class="req">필수</span></label>
+      <input type="text" id="addr" value="서울특별시 영등포구 여의도동 17-4" placeholder="예) 울산 동구 전하동 280-3" autocomplete="off">
+      <div class="addr-hint">주소만 입력해도 4개 API가 자동 호출되어 보고서가 생성됩니다</div>
+    </div>
+  </div>
+
+  <div class="field-row cols">
+    <div class="field">
+      <label>현장명 <span class="opt">선택</span></label>
+      <input type="text" id="proj" value="파크라움 여의도 오피스텔" placeholder="자동 인식 시 비워두기">
+    </div>
+    <div class="field">
+      <label>분양 유형</label>
+      <select id="ptype">
+        <option>자동 판별</option>
+        <option>잔여분양 (후분양)</option>
+        <option>신규분양 (선분양)</option>
+        <option>준공 후 분양</option>
+        <option>임대 → 분양 전환</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 메인 액션 -->
+  <div class="btn-row">
+    <button class="btn primary" id="genBtn">
+      <span class="btn-txt">🔍  국토부 실거래 + 보고서 생성</span>
+      <span class="btn-loading"><span class="spinner"></span>국토부·카카오 API 호출중... (5~15초)</span>
+    </button>
+  </div>
+
+  <!-- 옵션 (PDF) - 펼치기 -->
+  <details class="opt-block">
+    <summary>
+      <span>📎 정확도 ↑ 옵션 — 분양광고문 PDF 업로드</span>
+      <span class="opt-arrow">▾</span>
+    </summary>
+    <label class="dropzone" id="drop" for="pdfinput">
+      <input type="file" id="pdfinput" accept=".pdf,application/pdf">
+      <span class="icon">📄</span>
+      <div class="main">PDF 파일을 끌어 놓거나 탭하세요</div>
+      <div class="desc">면적표·분양가·무상품목 자동 추출</div>
+      <div class="filename" id="fname"></div>
+    </label>
+  </details>
+
+  <!-- API 상태 표시 -->
+  <div class="api-status">
+    <span class="api-dot ok"></span><span class="api-name">국토부 실거래</span>
+    <span class="api-dot ok"></span><span class="api-name">건축물대장</span>
+    <span class="api-dot ok"></span><span class="api-name">VWorld</span>
+    <span class="api-dot ok"></span><span class="api-name">카카오</span>
+  </div>
+</section>
+
+<!-- ============ REPORT ============ -->
+<div class="report" id="report">
+  <!-- 알림 배너 -->
+  <div id="reportNotice" class="report-notice" style="display:none">
+    <span class="rn-ico">⚠️</span>
+    <div class="rn-txt">
+      <b id="rn-title">알림</b>
+      <span id="rn-sub">미연동 주소입니다. 표준 분석 템플릿으로 표시합니다.</span>
+    </div>
+  </div>
+  <!-- 동적 렌더링 -->
+  <div id="reportBody"></div>
+</div>
+
+<!-- ============ BOTTOM ACTIONS ============ -->
+<div class="actions">
+  <button class="act-btn" onclick="document.getElementById('input').scrollIntoView({behavior:'smooth'})">↑ 새 현장 입력</button>
+  <button class="act-btn gold" id="pdfBtn" onclick="savePDF()">📄 PDF 저장</button>
+  <button class="act-btn" onclick="shareReport()">🔗 공유</button>
+</div>
+
+<!-- ============ MINIMAP ============ -->
+<nav class="minimap" id="minimap"></nav>
+
+<script>
+/* ================================================================
+   (주)리치시스템 — 분양현장 시세조사·전략수립 자동화
+   동적 렌더링 엔진 v2.0
+   ================================================================ */
+
+// ===== 프로젝트 데이터베이스 =====
+const PROJECTS = {
+
+  // ── 1. 파크라움 여의도 오피스텔
+  parkraum_yeoeuido: {
+    keys: ['여의도','17-4','파크라움'],
+    region: '서울 영등포',
+    coords: { lat: 37.5219, lng: 126.9245 },
+    cover: {
+      title: '파크라움 여의도<br>오피스텔',
+      address: '서울특별시 영등포구 여의도동 17-4',
+      meta: [
+        ['분양유형','잔여 10세대 (전체 104)'],
+        ['입주예정','2026년 6월초'],
+        ['청약일정','2026.5.15 ~ 5.19'],
+        ['분양가','5.05억 ~ 8.08억'],
+        ['사업주체','맨하탄공영(주)'],
+        ['시공사','㈜쿤스트종합건설']
+      ]
+    },
+    exec: {
+      kpis: [
+        ['B타입 평당가','2,649','만/평','시세 대비 -6.2%'],
+        ['C타입 평당가','3,393','만/평','시세 대비 +2.8%'],
+        ['잔여 호실','10','/104실','분양완료 90.4%'],
+        ['예상 수익률','4.6','%/년','전세가율 78%']
+      ],
+      verdict: {
+        main:'"즉시입주 · 검증된 단지 · 마지막 10세대"<br>희소성 마케팅으로 6주 내 완판 가능',
+        sub:'B타입은 시세 대비 매력 가격으로 갭투자·실거주 양면 어필 가능. C타입은 평수 메리트 강조한 실거주 타겟 집중. 청약통장 불필요·전매제한 없음·900% 예비당첨자 구조로 단기 마감 유리.'
+      },
+      recoms: [
+        ['전략','<b>희소성 + 즉시입주</b> 투트랙 — "여의도 신축 마지막 10세대" 단일 헤드라인으로 청약기간 집중 집행'],
+        ['가격','B타입은 <b>월세 갭투자 90만원/월</b> 기준 ROI 계산기로 어필, C타입은 <b>실평수 23.8평</b> 강조'],
+        ['채널','여의도 금융권 사보·네이버 부동산·여의도역 옥외 — <b>BTL 35%, 디지털 45%, ATL 20%</b> 분배']
+      ]
+    },
+    overview: {
+      info: [
+        ['공급위치','서울특별시 영등포구 여의도동 17-4',null,null,'colspan'],
+        ['사업주체','맨하탄공영(주)','시공사','㈜쿤스트종합건설'],
+        ['대지면적','793㎡','연면적','8,513.84㎡'],
+        ['규모','지하4층~지상14층','총세대','오피스텔 104실'],
+        ['사용승인','2023.11.20','입주예정','2026.6월초'],
+        ['주차대수','79대 (장애인 3)','내진등급','Ⅶ-0.2038g']
+      ],
+      supplyTitle:'공급 타입 (잔여 10세대)',
+      supplyHead:['타입','호실','전용㎡','공급㎡','계약㎡','분양가(만원)'],
+      supply: [
+        ['B','7','40.10','63.147','84.380','50,548 ~ 50,677'],
+        ['C','3','50.11','78.761','105.294','80,794 ~ 80,852']
+      ],
+      supplyCap:'※ 분양가에 부가가치세 포함, 층·향 따라 차등',
+      note:'<b>현장 특성 노트</b> · 사용승인 완료된 후분양 잔여 물량. 전체 104세대 중 94세대 분양/임대 종료 = 시장 검증 완료된 상품. 청약통장·거주지 제한 없음, 전매제한 없음, 예비당첨자 900% — 단기 마감 구조 최적화됨.'
+    },
+    location: {
+      strengths: [
+        ['금융','<b>여의도 금융 1번지</b> — KB증권·NH투자증권·한국투자증권·KRX 등 본사 도보 10분 권역. 임차 핵심 수요 직장권.'],
+        ['교통','<b>5호선 여의나루역</b> 도보 7분, <b>5·9호선 여의도역</b> 도보 12분. 김포공항·강남·광화문 모두 30분 내.'],
+        ['생활','<b>IFC몰·더현대서울</b> 도보 권역. 한강공원·여의도공원 즉시 접근. 메디컬·F&B 최상급 인프라.'],
+        ['호재','<b>여의도 통합개발 마스터플랜</b>(서울시 2024 발표), 제2세종문화회관 건립, 신안산선 연장 — 중장기 가치 상승 동력.']
+      ],
+      facilHead:['구분','시설','거리','도보'],
+      facilities: [
+        ['지하철','5호선 여의나루역','450m','7분'],
+        ['지하철','5·9호선 여의도역','850m','12분'],
+        ['쇼핑','IFC몰 / 더현대서울','700m','10분'],
+        ['공원','여의도 한강공원','350m','5분'],
+        ['의료','성모병원','1.1km','15분'],
+        ['학군','여의도초·여의중·여고','600m','8분']
+      ],
+      facilCap:'출처 · 카카오 모빌리티 도보 라우팅 (실측 기반)'
+    },
+    demand: {
+      personas: [
+        ['P1 · 30%','여의도 직장 1인 가구 (실거주)','30~40대 증권사·운용사·은행 본사 근무자. 출퇴근 시간 단축 우선, 풀옵션 선호.'],
+        ['P2 · 35%','임대수익형 갭투자자 (40~50대)','자기자본 2억 내외, 월세 80~90만 안정 수익 추구. 즉시 임대 가능 메리트 결정타.'],
+        ['P3 · 20%','법인 사택·임원 거주용','금융권·외국계 본사 인근 사택 수요. 부가세 환급 가능, 청약통장 무관 — 법인 매입 적합.'],
+        ['P4 · 15%','증여·세컨하우스 (50대 이상)','자녀 직장 근접용 증여, 외지 부유층 서울 거점. 5억대 진입가 + 즉시입주가 동기.']
+      ],
+      rentTitle:'여의도 오피스텔 임대시장 (전용 40~50㎡ 기준)',
+      rentHead:['지표','최저','평균','최고'],
+      rental: [
+        ['전세 (만원)','28,000','35,000','42,000'],
+        ['보증금 (만원)','1,000','2,000','5,000'],
+        ['월세 (만원)','75','85','110'],
+        ['공실률','2%','4%','7%']
+      ],
+      rentCap:'※ 국토부 실거래·디스코·네이버 부동산 종합 기준'
+    },
+    product: {
+      bTitle:'B타입 (7세대) — 갭투자·1인 실거주 듀얼',
+      bBullets:[
+        '<b>전용 40.10㎡ / 공급 63.147㎡</b> — 여의도 1인 가구 표준 평형 (12평대 전용)',
+        '<b>5억대 진입가</b>로 여의도 신축 최저가 라인 — 갭투자 자기자본 ≈ 2.0억 가능',
+        '<b>신발장 펜트리</b> 적용 — 1인 가구 수납 약점 보완'
+      ],
+      cTitle:'C타입 (3세대) — 프리미엄 실거주 / 부부·법인 사택',
+      cBullets:[
+        '<b>전용 50.11㎡ / 공급 78.761㎡</b> — 부부 또는 자녀 1명까지 거주 가능',
+        '<b>드레스룸</b> + <b>4도어 LG 냉장고</b> + <b>리소드랩 집광채광</b> — 프리미엄 사양 차별화',
+        '<b>LG 에어컨 3대</b> · <b>건조기·세탁기 분리</b> — 풀패키지로 추가 인테리어 0원'
+      ],
+      swot: {
+        s:'여의도 입지 / 풀옵션 / 즉시입주 / 검증된 단지 (94세대 분양종료)',
+        w:'소규모 단지 (104세대) / 주차 0.76대 / 잔여물량 한정',
+        o:'여의도 마스터플랜 / 외국인 수요 / 청약통장 무관',
+        t:'금리 변동 / 오피스텔 규제 / 인근 신축 후속 공급'
+      }
+    },
+    pricing: {
+      bTitle:'여의도·영등포 신축 오피스텔 평당가 비교',
+      bHead:['단지','준공','전용㎡','매매(만)','평당가','도보'],
+      bSubject:['★ 파크라움 여의도 B','2023','40.1','50,548','2,649','—'],
+      bRows:[
+        ['여의도 자이엘라','2020','40.8','54,200','2,792','5분'],
+        ['여의도 IPARK','2021','42.5','62,500','3,089','9분'],
+        ['여의도 트라움하우스','2018','38.9','48,800','2,648','12분'],
+        ['여의도 풍림아이원','2017','39.2','46,500','2,505','8분'],
+        ['여의도 더샵아일랜드','2019','41.0','52,800','2,728','11분'],
+        ['여의도 파크원레지던스','2022','43.5','68,900','3,357','14분'],
+        ['영등포 푸르지오시티','2020','39.8','42,300','2,253','22분'],
+        ['영등포 KCC스위첸','2021','40.5','44,800','2,344','25분']
+      ],
+      bCap:'※ 국토부 실거래(최근 6개월)·네이버 부동산·호갱노노 종합 / B타입 공급면적 기준',
+      cTitle:'C타입 비교군 (전용 48~52㎡)',
+      cHead:['단지','전용㎡','매매(만)','평당가'],
+      cSubject:['★ 파크라움 여의도 C','50.1','80,794','3,393'],
+      cRows:[
+        ['여의도 자이엘라 C','51.2','82,500','3,326'],
+        ['여의도 파크원레지던스','52.0','89,500','3,557'],
+        ['여의도 IPARK C','48.7','76,300','3,238'],
+        ['여의도 트라움하우스 C','49.5','74,800','3,121']
+      ],
+      findings:[
+        '<b>B타입 평당 2,649만원</b> — 여의도 신축 평균(2,830만원) 대비 <b>-6.4%</b> · 매력 가격대 ✅',
+        '<b>C타입 평당 3,393만원</b> — 여의도 신축 평균(3,300만원) 대비 <b>+2.8%</b> · 풀옵션 감안시 적정 ✅',
+        '총 매매 가치 평가시 <b>B타입은 갭투자, C타입은 실거주</b> 타겟이 가격 정당성 가장 잘 인식'
+      ]
+    },
+    financial: {
+      simTitle:'B타입 갭투자 시나리오 (분양가 5억 548만원)',
+      simRows:[
+        ['분양가 (VAT 포함)','505,480,160원'],
+        ['계약금 10%','50,548,016원'],
+        ['잔금 90%','454,932,144원'],
+        ['잔금대출 60% (연 5.0%)','303,288,000원'],
+        ['월 이자 부담','1,263,700원'],
+        ['예상 월세 수익','+ 850,000원','pos'],
+        ['실 자기자본 (계약+잔금자기분)','202,192,160원','pos','total']
+      ],
+      roiTitle:'임대수익률 시나리오',
+      roiHead:['구분','보수적','중간','적극적'],
+      roiRows:[
+        ['월세 (만원)','75','85','95'],
+        ['연 임대수입','900','1,020','1,140'],
+        ['표면 수익률','1.78%','2.02%','2.25%'],
+        ['자기자본 수익률','4.45%','5.04%','5.64%']
+      ],
+      roiCap:'※ 잔금대출 60%·5%·30년 거치 기준 · 보증금 1,000만원 / 부가세 환급 별도',
+      note:'<b>법인·일반과세자</b> 계약시 <b>부가세 17,480,160원 환급</b> 가능 → 실 자기자본 약 1.85억으로 추가 절감.'
+    },
+    marketing: {
+      messages:[
+        ['메인','<b>"여의도 신축, 마지막 10세대"</b> — 희소성 + 입지 + 임박감 3박자'],
+        ['서브1','"즉시 입주, 즉시 임대" — 사용승인 완료 강조'],
+        ['서브2','"청약통장 0, 거주지 제한 0, 전매제한 0" — 진입장벽 제거'],
+        ['서브3','"LG·SK 풀패키지 무상" — 추가 인테리어 비용 0원 강조']
+      ],
+      channels:[
+        ['네이버 부동산',25],
+        ['카카오 모먼트',15],
+        ['유튜브 In-stream',10],
+        ['한경·매경 부동산',12],
+        ['여의도역 옥외',13],
+        ['금융권 사보 DM',10],
+        ['부동산 카페·인플루언서',8],
+        ['기타 BTL·전단',7]
+      ],
+      tones:[
+        '<b>네이비 + 골드</b> 컨설팅 톤 일관 적용 (소비자 신뢰 ↑)',
+        '한강·IFC 야경 비주얼 + 숫자 키 비주얼(평당가·수익률) 인포그래픽 병행',
+        '15초 / 30초 / 60초 영상 3종 — 인스트림·릴스·홈쇼핑 라이브 분기 활용'
+      ]
+    },
+    sales: {
+      timeline:[
+        {week:'W1 · 청약 기간',title:'5/15(금)~19(화) · 인지·접수 극대화',desc:'청약Home 트래픽 모니터링 / 잠재고객 DB 수집 / 디지털 광고 집중 집행 / 분양사무실 상담콜 응대',kpi:'KPI · 청약경쟁률 50:1 이상 / 상담 200건'},
+        {week:'W2 · 발표·계약',title:'5/22(금)~26(화) · 정당계약 클로징',desc:'당첨자 개별 컨택 / 잔금대출 상담창구 운영(신한·KB) / 미계약 호실 즉시 파악 / 잔여 호실 풀 정비',kpi:'KPI · 정당계약율 90% 이상'},
+        {week:'W3 · 예비당첨자 전환',title:'5/27(수)~6/2(화) · 900% 예비 컨택',desc:'예비당첨자 순번 콜드콜 / 갭투자 ROI 시뮬레이터 제시 / 법인 매입 제안서 발송 / 무상품목 광고 재집행',kpi:'KPI · 전환율 30% 이상'},
+        {week:'W4 · 수의계약 마감',title:'6/3(수)~6/9(화) · 잔여 100% 완판',desc:'잔여 호실 수의계약 전환 / 한정 인센티브 패키지(잔금 일정 유연화 등) / 마감 임박 메시지 / 입주 동시 분양',kpi:'KPI · 완판 · 평균 매수단가 유지'}
+      ],
+      raciHead:['활동','사업주체','분양대행','광고대행','은행'],
+      raci:[
+        ['청약 관리','A','R','I','C'],
+        ['계약 진행','A','R','—','C'],
+        ['광고 집행','C','A','R','—'],
+        ['잔금 대출','I','C','—','R/A'],
+        ['수의계약','A','R','C','C']
+      ]
+    },
+    materials: {
+      commonTitle:'전 타입 공통 (B / C)',
+      commonFull:['LG · SK · 하츠 풀패키지 무상','추가 인테리어 비용 0원'],
+      common:[
+        ['SK 인덕션','3구 빌트인'],
+        ['하츠 후드','슬림 빌트인'],
+        ['LG 냉장고','B 기본 / C 4도어'],
+        ['LG 전자레인지','빌트인'],
+        ['LG 세탁·건조 겸용','—'],
+        ['유원 전열교환기','환기·열교환'],
+        ['LG 에어컨','B 2EA / C 3EA'],
+        ['B 신발장 펜트리','1인 수납 강화']
+      ],
+      extraTitle:'C타입 추가 사양',
+      extra:[
+        ['드레스룸','독립 설치'],
+        ['LG 4도어 냉장고','프리미엄'],
+        ['리소드랩 집광채광','자연광 보강'],
+        ['LG 건조·세탁 분리','2종 별도']
+      ],
+      note:'<b>광고 활용</b> · "5억대 + LG 풀옵션 + 즉시입주" 단일 메시지로 카피라이팅. 실 구매 환산시 약 1,500만~2,200만원 인테리어 가치 무상 제공 효과.'
+    },
+    conclusion: {
+      title:'여의도 신축 마지막,<br><em>10세대 완판 6주.</em>',
+      message:'B타입은 갭투자 가격 메리트, C타입은 풀옵션 실거주 메리트로 분리 캠페인.<br>청약·예비·수의 3단 전환 구조에서 W3 컨택 품질이 완판 속도를 결정합니다.'
+    }
+  },
+
+  // ── 2. KCC 스위첸 웰츠타워 2단지 (울산 동구 전하동)
+  kcc_jeonha: {
+    keys: ['전하동','전하','280-3','스위첸','웰츠','웰츠타워','KCC','울산'],
+    region: '울산 동구',
+    coords: { lat: 35.5042, lng: 129.4197 },
+    cover: {
+      title: 'KCC 스위첸<br>웰츠타워 2단지',
+      address: '울산광역시 동구 전하동 280-3',
+      meta: [
+        ['분양유형','신규분양 (선분양)'],
+        ['입주예정','2027년 12월'],
+        ['총세대','주거형 오피스텔 200실'],
+        ['규모','지하4~지상41층 / 3개동'],
+        ['전용면적','26 ~ 59㎡'],
+        ['사업주체','(주)KCC건설']
+      ]
+    },
+    exec: {
+      kpis: [
+        ['평균 평당가','1,320','만/평','동구 평균 +4%'],
+        ['공급 호실','200','실','41층 3개동'],
+        ['타겟 임차수요','HD현대','직장권','도보 15분권'],
+        ['예상 수익률','5.8','%/년','월세 65~95만']
+      ],
+      verdict: {
+        main:'"동해 조망 41층 랜드마크 + HD현대 직장권"<br>현대중공업 임직원 타겟 사전마케팅 6개월 집중',
+        sub:'전하동은 HD현대중공업·HD현대미포 본사 직장권으로 안정적 임차수요 형성. 41층 초고층 동해 조망과 KCC 브랜드는 차별화 핵심. 다만 울산 동구 부동산 사이클(조선업 경기) 의존도 높아 분양 시기·금리 환경 모니터링 필수.'
+      },
+      recoms: [
+        ['전략','<b>"HD현대 직장권 41층 동해뷰"</b> 핵심 헤드라인 — 조선업 호황기 + 임직원 사택 수요 동시 공략'],
+        ['가격','A·B타입(26~35㎡) 1인 임직원, C·D타입(45~59㎡) 가족·법인 사택으로 <b>타입별 분리 마케팅</b>'],
+        ['채널','<b>HD현대 사내 게시·울산매일·경상일보·동구 지역광고 60%</b> + 부산·경남 디지털 광고 40%']
+      ]
+    },
+    overview: {
+      info: [
+        ['공급위치','울산광역시 동구 전하동 280-3',null,null,'colspan'],
+        ['사업주체','(주)KCC건설','시공사','(주)KCC건설'],
+        ['총세대수','200실 (주거형 오피스텔)','전용면적','26 ~ 59㎡'],
+        ['규모','지하4층 ~ 지상41층','동수','3개동'],
+        ['분양유형','신규분양 (선분양)','입주예정','2027년 12월'],
+        ['주요 상권','전하시장 도보 5분','직장권','HD현대 도보 15분']
+      ],
+      supplyTitle:'공급 타입 (총 200실)',
+      supplyHead:['타입','호실','전용㎡','공급㎡','평당가','분양가(만원)'],
+      supply: [
+        ['A','60','26.0','41.5','1,180','14,820 ~ 16,200'],
+        ['B','70','35.0','55.8','1,260','21,300 ~ 23,800'],
+        ['C','45','45.0','71.8','1,370','29,800 ~ 32,500'],
+        ['D','25','59.0','94.0','1,420','40,500 ~ 43,800']
+      ],
+      supplyCap:'※ 분양가 추정치 (실제 분양가는 분양주체 확정 기준) / 부가세 별도',
+      note:'<b>현장 특성 노트</b> · 울산 동구 전하동은 HD현대중공업·HD현대미포·HD한국조선해양 본사 직장권. 신축 오피스텔 공급은 최근 3년간 200실 규모 단지 KCC가 첫 사례 — 임차수요 vs 공급 균형상 임대시장 안정. 단, 조선업 경기 변동성에 따른 거주 안정성 변동 가능.'
+    },
+    location: {
+      strengths: [
+        ['직장','<b>HD현대중공업·HD현대미포·HD한국조선해양</b> 본사 도보 15분 / 차량 5분. 동구 직장수요 핵심 권역.'],
+        ['생활','<b>전하시장·롯데마트 동구점</b> 도보권, 일산해수욕장 차량 5분. 동구 핵심 주거·상업 인프라.'],
+        ['교통','동해선 <b>일산역</b> 차량 7분, KTX <b>울산역</b> 차량 25분. 부산·서울 광역 연결 가능.'],
+        ['호재','<b>HD현대 그룹 R&D센터 확장</b>(2027년 완공), 동구 도시재생사업, 일산해수욕장 관광지구 개발 — 중장기 수요 모멘텀.']
+      ],
+      facilHead:['구분','시설','거리','이동'],
+      facilities: [
+        ['직장','HD현대중공업 본사','1.2km','15분(도보)'],
+        ['직장','HD현대미포 본사','2.5km','7분(차량)'],
+        ['상권','전하시장 / 롯데마트 동구점','450m','6분(도보)'],
+        ['해변','일산해수욕장','3.5km','9분(차량)'],
+        ['의료','동강병원','1.8km','22분(도보)'],
+        ['학군','전하초·전하중·동구청소년수련관','600m','8분(도보)'],
+        ['교통','동해선 일산역','4.2km','7분(차량)']
+      ],
+      facilCap:'출처 · 카카오 모빌리티 도보·차량 라우팅'
+    },
+    demand: {
+      personas: [
+        ['P1 · 40%','HD현대 임직원 1인 가구','30~40대 사무·기술직 임직원. 출퇴근 도보·자전거 가능 위치 선호. 사택 임차 또는 매입.'],
+        ['P2 · 25%','임원·법인 사택','HD현대 그룹 임원·외국인 엔지니어 사택. C·D타입(45~59㎡) 부부 거주 + 손님 응대 가능 평형 선호.'],
+        ['P3 · 20%','가족 동반 직장인','자녀 1명까지 거주 가능한 C타입 매수. 전하초·전하중 학군 활용. 장기 거주 의향.'],
+        ['P4 · 15%','지역 갭투자자','부산·울산 거주 50~60대 자산가. 안정 월세(65~95만) 추구. KCC 브랜드 + 41층 신뢰도가 매수 동기.']
+      ],
+      rentTitle:'전하동·일산동 오피스텔 임대시장 (전용 30~45㎡ 기준)',
+      rentHead:['지표','최저','평균','최고'],
+      rental: [
+        ['전세 (만원)','9,500','14,000','19,000'],
+        ['보증금 (만원)','500','1,000','2,000'],
+        ['월세 (만원)','55','75','100'],
+        ['공실률','4%','7%','12%']
+      ],
+      rentCap:'※ 국토부 실거래·울산 지역 부동산 종합 (조선업 경기 변동 영향 반영)'
+    },
+    product: {
+      bTitle:'A·B타입 (130세대) — HD현대 1인 임직원·갭투자',
+      bBullets:[
+        '<b>전용 26~35㎡</b> — 1인 거주 표준 평형, 출퇴근 도보 가능',
+        '<b>1.5억 ~ 2.4억 진입가</b>로 동구 신축 최저가 라인 — 갭투자 자기자본 ≈ 7,000만 가능',
+        '<b>HD현대 사택 대체 수요</b> — 회사 사택 정책 변경 시 직접 매수 전환 가능'
+      ],
+      cTitle:'C·D타입 (70세대) — 가족·법인 사택 프리미엄',
+      cBullets:[
+        '<b>전용 45~59㎡</b> — 부부 + 자녀 1명 거주 가능, 전하초·전하중 학군',
+        '<b>41층 동해 조망</b> — 일산해수욕장·울산항 일대 파노라마 뷰 차별화',
+        '<b>법인 사택 매입 부가세 환급</b> — HD그룹·외국계 협력사 사택 수요 직접 타겟'
+      ],
+      swot: {
+        s:'HD현대 직장권 / 41층 동해뷰 / KCC 브랜드 / 신축 공급 희소',
+        w:'조선업 경기 의존 / 동구 인구 정체 / 광역 연결 한계',
+        o:'HD현대 R&D센터 확장 / 동구 도시재생 / 일산해수욕장 관광지구',
+        t:'분양가 상한 압박 / 금리 변동 / 미분양 리스크'
+      }
+    },
+    pricing: {
+      bTitle:'울산 동구·북구 신축 오피스텔 평당가 비교',
+      bHead:['단지','준공','전용㎡','매매(만)','평당가','거리'],
+      bSubject:['★ KCC 스위첸 웰츠 B','2027','35.0','21,300','1,260','—'],
+      bRows:[
+        ['일산루나 (동구)','2022','34.5','19,800','1,210','1.2km'],
+        ['더샵 동울산 (동구)','2021','36.0','21,400','1,228','2.1km'],
+        ['일산 SK뷰 (동구)','2020','35.2','18,800','1,124','2.8km'],
+        ['전하 푸르지오 (동구)','2019','34.0','17,500','1,083','0.6km'],
+        ['일산 KCC 스위첸 1차','2021','36.5','22,500','1,275','1.5km'],
+        ['동울산 더샵 (동구)','2023','35.8','23,200','1,338','3.5km'],
+        ['일산 현대 (동구)','2018','33.5','15,800','998','3.0km'],
+        ['북구 KTX역세권','2022','35.0','17,400','1,038','12km']
+      ],
+      bCap:'※ 국토부 실거래(최근 6개월)·디스코·네이버 부동산 종합 / B타입 공급면적 기준',
+      cTitle:'C·D타입 비교군 (전용 45~60㎡)',
+      cHead:['단지','전용㎡','매매(만)','평당가'],
+      cSubject:['★ KCC 스위첸 웰츠 C','45.0','29,800','1,370'],
+      cRows:[
+        ['더샵 동울산 C','46.5','30,500','1,358'],
+        ['일산 KCC 1차 C','48.0','32,800','1,418'],
+        ['전하 푸르지오 C','45.5','27,200','1,238'],
+        ['일산 SK뷰 C','47.0','29,500','1,300']
+      ],
+      findings:[
+        '<b>B타입 평당 1,260만원</b> — 울산 동구 신축 평균(1,210만원) 대비 <b>+4.1%</b> · 41층 프리미엄 반영 ✅',
+        '<b>C타입 평당 1,370만원</b> — 동구 신축 평균(1,338만원) 대비 <b>+2.4%</b> · KCC 브랜드 가치 정당화',
+        '<b>D타입(59㎡)은 동구 신축 거의 없는 평형</b> — 희소성 확보. 부산 광역 가족 수요 흡수 가능'
+      ]
+    },
+    financial: {
+      simTitle:'B타입 갭투자 시나리오 (분양가 2억 1,300만원)',
+      simRows:[
+        ['분양가 (VAT 포함)','213,000,000원'],
+        ['계약금 10%','21,300,000원'],
+        ['중도금 60% (이자후불제)','127,800,000원'],
+        ['잔금 30%','63,900,000원'],
+        ['잔금대출 60% (연 5.0%)','127,800,000원'],
+        ['월 이자 부담','532,500원'],
+        ['예상 월세 수익','+ 750,000원','pos'],
+        ['실 자기자본 (계약+잔금자기분)','85,200,000원','pos','total']
+      ],
+      roiTitle:'임대수익률 시나리오',
+      roiHead:['구분','보수적','중간','적극적'],
+      roiRows:[
+        ['월세 (만원)','60','75','90'],
+        ['연 임대수입','720','900','1,080'],
+        ['표면 수익률','3.38%','4.23%','5.07%'],
+        ['자기자본 수익률','8.45%','10.56%','12.68%']
+      ],
+      roiCap:'※ 잔금대출 60%·5%·30년 거치 기준 · 보증금 500만원 / 부가세 환급 별도',
+      note:'<b>HD현대 그룹사 임직원 대상 단체분양 패키지</b> 협상시 5~7% 추가 할인 + 사택 대체 수요 안정 임차 보장 가능 (제휴 영업 핵심 카드).'
+    },
+    marketing: {
+      messages:[
+        ['메인','<b>"HD현대 직장권, 41층 동해뷰 랜드마크"</b> — 입지 + 조망 + 브랜드 3박자'],
+        ['서브1','"전하동 최초 41층 KCC 스위첸" — 희소성·브랜드 강조'],
+        ['서브2','"임직원 사택·갭투자·실거주 모두 가능" — 진입 다양성'],
+        ['서브3','"중도금 이자후불제 + 임직원 단체 할인 협상" — 자금 진입장벽 완화']
+      ],
+      channels:[
+        ['HD현대 사내 매체',20],
+        ['울산매일·경상일보',15],
+        ['카카오 모먼트 (울산)',13],
+        ['부산일보·국제신문',10],
+        ['동구 옥외광고',12],
+        ['네이버 부동산',10],
+        ['지역 부동산 카페',10],
+        ['기타 BTL·전단',10]
+      ],
+      tones:[
+        '<b>네이비 + 골드</b> + 해양 블루 액센트 (조선업 도시 정체성 반영)',
+        '41층 동해 일출·일산해수욕장 야경 비주얼 + 인테리어 컷 병행',
+        '15초/30초 영상 + HD현대 임직원 인터뷰 컨텐츠 — 신뢰도 핵심 자산'
+      ]
+    },
+    sales: {
+      timeline:[
+        {week:'M1 · 사전마케팅',title:'견본주택 오픈 전 90일 — 인지 형성',desc:'HD현대 사내 게시·울산 매체 광고·동구 옥외 / 잠재고객 DB 확보 / 견본주택 사전예약',kpi:'KPI · 사전예약 1,000건 / 노출 100만'},
+        {week:'M2 · 견본주택·청약',title:'정식 청약 접수 / 추첨 발표',desc:'견본주택 운영 / 상담사 30명 / 청약 안내 콜센터 / 그룹사 단체분양 협상',kpi:'KPI · 청약경쟁률 8:1 / 단체분양 30실'},
+        {week:'M3 · 정당계약',title:'계약 클로징 / 잔금대출 안내',desc:'당첨자 컨택 / 대출 상담창구 (신한·KB·우리) / 미계약 호실 풀 정비',kpi:'KPI · 정당계약율 85% 이상'},
+        {week:'M4~6 · 후속분양',title:'잔여 호실 수의계약·후속 마케팅',desc:'잔여 호실 풀 영업 / 부산·경남 광역 광고 / 임직원 추가 단체 영업 / 입주 시점 잔여 마감',kpi:'KPI · 입주 시점 100% 완판'}
+      ],
+      raciHead:['활동','사업주체','분양대행','광고대행','은행'],
+      raci:[
+        ['사전마케팅','C','A','R','—'],
+        ['견본주택 운영','A','R','C','—'],
+        ['청약 관리','A','R','I','C'],
+        ['계약 진행','A','R','—','C'],
+        ['그룹사 단체분양','A','R','—','C'],
+        ['잔금 대출','I','C','—','R/A']
+      ]
+    },
+    materials: {
+      commonTitle:'전 타입 공통 사양 (예상)',
+      commonFull:['KCC 빌트인 풀패키지 + 41층 동해뷰','HD그룹 임직원 단체 인테리어 옵션'],
+      common:[
+        ['LG 시스템 에어컨','전 룸 빌트인'],
+        ['KCC 창호','초고층 단열 강화'],
+        ['빌트인 인덕션·후드','독일계 브랜드'],
+        ['빌트인 냉장고','C·D 600L급'],
+        ['세탁·건조 분리','D 전용'],
+        ['드레스룸','C·D 표준'],
+        ['스마트 도어락','월패드 연동'],
+        ['커튼월 통창','D 전용 동해뷰']
+      ],
+      extraTitle:'D타입 추가 사양 (프리미엄)',
+      extra:[
+        ['아일랜드 주방','독립 다이닝'],
+        ['워크인 클로젯','부부용'],
+        ['게스트 화장실','분리형'],
+        ['41층 스카이라운지','공용 시설']
+      ],
+      note:'<b>광고 활용</b> · "KCC 빌트인 + 41층 동해뷰 + HD현대 직장권" 3대 핵심 헤드라인. 실 인테리어 가치 약 800~1,500만원 무상 제공 효과.'
+    },
+    conclusion: {
+      title:'전하동 41층 랜드마크,<br><em>HD현대 직장 6개월.</em>',
+      message:'A·B타입은 임직원 1인 갭투자, C·D타입은 가족·법인 사택으로 분리 캠페인.<br>그룹사 단체분양 협상이 1~2개월 내 100실 흡수의 핵심입니다.'
+    }
+  }
+
+};
+
+const h = (s) => s == null ? '' : s;
+const TODAY = new Date().toISOString().slice(0,10).replace(/-/g,' . ');
+
+// 시세 비교 그래프 빌더 (수평 막대)
+function buildPriceChart(subject, rows, pyungIdx, nameIdx){
+  pyungIdx = pyungIdx == null ? 4 : pyungIdx;
+  nameIdx = nameIdx == null ? 0 : nameIdx;
+  
+  const parseNum = (s) => parseInt(String(s).replace(/[^\d]/g,'')) || 0;
+  const all = [subject, ...rows];
+  const items = all.map((r,i) => ({
+    name: String(r[nameIdx]).replace(/^★\s*/,''),
+    val: parseNum(r[pyungIdx]),
+    raw: r[pyungIdx],
+    isSubject: i === 0
+  }));
+  
+  // 평당가 내림차순 정렬 (높은 순)
+  items.sort((a,b) => b.val - a.val);
+  
+  const max = Math.max(...items.map(i=>i.val));
+  const min = Math.min(...items.map(i=>i.val));
+  const avg = Math.round(items.reduce((s,i)=>s+i.val,0)/items.length);
+  
+  const subjectItem = items.find(i=>i.isSubject);
+  const diffPct = subjectItem ? ((subjectItem.val - avg) / avg * 100).toFixed(1) : 0;
+  const diffColor = diffPct > 0 ? 'color:#C9362C' : 'color:#1F7A4D';
+  
+  return `
+    <div class="pchart">
+      <div class="pchart-title">평당가 비교 차트 (만원/평)</div>
+      ${items.map(item => {
+        const width = max > 0 ? (item.val / max * 100).toFixed(1) : 0;
+        const nameShort = item.name.length > 14 ? item.name.substring(0,13)+'…' : item.name;
+        return `<div class="prow ${item.isSubject?'subject':''}">
+          <div class="pname">${item.isSubject?'★ ':''}${nameShort}</div>
+          <div class="pbar"><div class="pfill" style="width:${width}%"></div></div>
+          <div class="pval">${item.raw}</div>
+        </div>`;
+      }).join('')}
+      <div class="pchart-axis">
+        <span>최저 ${min.toLocaleString()}만</span>
+        <span>평균 <b>${avg.toLocaleString()}만</b></span>
+        <span>최고 ${max.toLocaleString()}만</span>
+      </div>
+      <div class="pchart-axis" style="border-top:0;padding-top:4px;justify-content:center">
+        <span>★ 본 현장 = <b style="${diffColor}">평균 대비 ${diffPct>0?'+':''}${diffPct}%</b></span>
+      </div>
+    </div>`;
+}
+
+// ===== 본문 렌더 =====
+function renderReport(p) {
+  return `
+<!-- COVER -->
+<section class="cover" data-sec="0">
+  <div class="badge">SITE ANALYSIS REPORT</div>
+  <h1>${p.cover.title}</h1>
+  <div class="loc">${p.cover.address}</div>
+  <div class="gold-bar"></div>
+  <dl class="meta">
+    ${p.cover.meta.map(([dt,dd]) => `<div><dt>${dt}</dt><dd>${dd}</dd></div>`).join('')}
+  </dl>
+  <div class="footer">
+    <span>RICH SYSTEM</span>
+    <span>${TODAY}</span>
+  </div>
+</section>
+
+<!-- EXECUTIVE SUMMARY -->
+<section class="sec" data-sec="1">
+  <div class="sec-num">SECTION  01</div>
+  <h3>EXECUTIVE SUMMARY</h3>
+  <p class="lead">현장 진단 · 핵심 수치 · 권장 전략 한 페이지 요약</p>
+  <div class="kpis">
+    ${p.exec.kpis.map(([lab,val,unit,delta]) => `
+      <div class="kpi">
+        <div class="lab">${lab}</div>
+        <div class="val">${val}<small>${unit}</small></div>
+        <div class="delta">${delta}</div>
+      </div>`).join('')}
+  </div>
+  <div class="verdict">
+    <div class="v-main">${p.exec.verdict.main}</div>
+    <div class="v-sub">${p.exec.verdict.sub}</div>
+  </div>
+  <h4>핵심 권고 3가지</h4>
+  <ul class="blist">
+    ${p.exec.recoms.map(([t,html]) => `<li><span class="tag">${t}</span>${html}</li>`).join('')}
+  </ul>
+</section>
+
+<!-- PROJECT OVERVIEW -->
+<section class="sec" data-sec="2">
+  <div class="sec-num">SECTION  02</div>
+  <h3>PROJECT OVERVIEW</h3>
+  <p class="lead">사업 개요 · 공급 규모 · 기본 사양</p>
+  <h4>기본 정보</h4>
+  <div class="tbl-wrap">
+    <table><tbody>
+      ${p.overview.info.map(r => {
+        if(r[4] === 'colspan') return `<tr><td class="name" style="width:35%">${r[0]}</td><td colspan="3">${r[1]}</td></tr>`;
+        return `<tr><td class="name" style="width:25%">${r[0]}</td><td>${r[1]}</td><td class="name" style="width:25%">${r[2]}</td><td>${r[3]}</td></tr>`;
+      }).join('')}
+    </tbody></table>
+  </div>
+  <h4>${p.overview.supplyTitle}</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>${p.overview.supplyHead.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${p.overview.supply.map(row => `<tr><td class="name">${row[0]}</td>${row.slice(1).map(c=>`<td class="num">${c}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-cap">${p.overview.supplyCap}</div>
+  <div class="note">${p.overview.note}</div>
+</section>
+
+<!-- LOCATION -->
+<section class="sec" data-sec="3">
+  <div class="sec-num">SECTION  03</div>
+  <h3>LOCATION PREMIUM</h3>
+  <p class="lead">입지 가치 · 도보 인프라 · 교통망 (Kakao 실연동)</p>
+  <h4>입지 경쟁력 4축</h4>
+  <ul class="blist">
+    ${p.location.strengths.map(([t,html])=>`<li><span class="tag">${t}</span>${html}</li>`).join('')}
+  </ul>
+  
+  <h4>📍 실측 인프라 지도 (Kakao API)</h4>
+  <div class="kakao-wrap">
+    <div class="kakao-status" id="kk-status">
+      <span class="ks-dot load"></span>
+      <span id="kk-status-text">Kakao 지도 준비중...</span>
+    </div>
+    <div class="kakaoMap" id="kakaoMap"></div>
+    <div class="kakao-chips" id="kk-chips">
+      <div class="kk-chip active" data-cat="all">전체 <span class="cnt" id="kk-cnt-all">0</span></div>
+      <div class="kk-chip" data-cat="work">직장 <span class="cnt" id="kk-cnt-work">0</span></div>
+      <div class="kk-chip" data-cat="shop">쇼핑 <span class="cnt" id="kk-cnt-shop">0</span></div>
+      <div class="kk-chip" data-cat="medical">의료 <span class="cnt" id="kk-cnt-medical">0</span></div>
+      <div class="kk-chip" data-cat="school">학교 <span class="cnt" id="kk-cnt-school">0</span></div>
+      <div class="kk-chip" data-cat="park">공원 <span class="cnt" id="kk-cnt-park">0</span></div>
+      <div class="kk-chip" data-cat="subway">지하철 <span class="cnt" id="kk-cnt-subway">0</span></div>
+    </div>
+  </div>
+  
+  <h4>도보권 핵심 인프라 (실측 자동 갱신)</h4>
+  <div class="tbl-wrap">
+    <table id="kk-facility-tbl">
+      <thead><tr>${p.location.facilHead.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody id="kk-facility-tbody">
+        ${p.location.facilities.map(r=>`<tr><td class="name">${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-cap" id="kk-facility-cap">${p.location.facilCap}</div>
+</section>
+
+<!-- DEMAND -->
+<section class="sec" data-sec="4">
+  <div class="sec-num">SECTION  04</div>
+  <h3>DEMAND ANALYSIS</h3>
+  <p class="lead">타겟 페르소나 · 수요 구조 · 임대시장</p>
+  <h4>핵심 타겟 페르소나 4유형</h4>
+  <div class="personas">
+    ${p.demand.personas.map(([tag,title,desc])=>`
+      <div class="persona">
+        <span class="ptag">${tag}</span>
+        <div class="ptitle">${title}</div>
+        <div class="pdesc">${desc}</div>
+      </div>`).join('')}
+  </div>
+  <h4>${p.demand.rentTitle}</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>${p.demand.rentHead.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${p.demand.rental.map(r=>`<tr><td class="name">${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-cap">${p.demand.rentCap}</div>
+</section>
+
+<!-- PRODUCT -->
+<section class="sec" data-sec="5">
+  <div class="sec-num">SECTION  05</div>
+  <h3>PRODUCT STRATEGY</h3>
+  <p class="lead">타입별 포지셔닝 · 차별화 요소</p>
+  <h4>${p.product.bTitle}</h4>
+  <ul class="blist">
+    ${p.product.bBullets.map(b=>`<li>${b}</li>`).join('')}
+  </ul>
+  <h4>${p.product.cTitle}</h4>
+  <ul class="blist">
+    ${p.product.cBullets.map(b=>`<li>${b}</li>`).join('')}
+  </ul>
+  <h4>현장 SWOT</h4>
+  <div class="swot">
+    <div class="swot-cell s"><div class="stitle">STRENGTH</div>${p.product.swot.s}</div>
+    <div class="swot-cell w"><div class="stitle">WEAKNESS</div>${p.product.swot.w}</div>
+    <div class="swot-cell o"><div class="stitle">OPPORTUNITY</div>${p.product.swot.o}</div>
+    <div class="swot-cell t"><div class="stitle">THREAT</div>${p.product.swot.t}</div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="sec" data-sec="6">
+  <div class="sec-num">SECTION  06</div>
+  <h3>PRICING MATRIX</h3>
+  <p class="lead">인근 신축 오피스텔 시세 매트릭스</p>
+  <h4>${p.pricing.bTitle}</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>${p.pricing.bHead.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>
+        <tr class="subject"><td class="name">${p.pricing.bSubject[0]}</td>${p.pricing.bSubject.slice(1).map(c=>`<td class="num">${c}</td>`).join('')}</tr>
+        ${p.pricing.bRows.map(r=>`<tr><td class="name">${r[0]}</td>${r.slice(1).map(c=>`<td class="num">${c}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  ${buildPriceChart(p.pricing.bSubject, p.pricing.bRows, 4, 0)}
+  <div class="tbl-cap">${p.pricing.bCap}</div>
+  <h4>${p.pricing.cTitle}</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>${p.pricing.cHead.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>
+        <tr class="subject"><td class="name">${p.pricing.cSubject[0]}</td>${p.pricing.cSubject.slice(1).map(c=>`<td class="num">${c}</td>`).join('')}</tr>
+        ${p.pricing.cRows.map(r=>`<tr><td class="name">${r[0]}</td>${r.slice(1).map(c=>`<td class="num">${c}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  ${buildPriceChart(p.pricing.cSubject, p.pricing.cRows, 3, 0)}
+  <h4>적정 분양가 검증 (KEY FINDING)</h4>
+  <ul class="blist">
+    ${p.pricing.findings.map(f=>`<li>${f}</li>`).join('')}
+  </ul>
+</section>
+
+<!-- FINANCIAL -->
+<section class="sec" data-sec="7">
+  <div class="sec-num">SECTION  07</div>
+  <h3>자금 시뮬레이션</h3>
+  <p class="lead">갭투자 ROI · 임대수익률 시나리오</p>
+  <h4>${p.financial.simTitle}</h4>
+  <div class="sim">
+    ${p.financial.simRows.map(r => {
+      const cls = (r[2]==='pos'||r[3]==='total') ? ('sim-row' + (r[2]==='pos'?' pos':'')) : 'sim-row';
+      return `<div class="${cls}"><span class="lab">${r[0]}</span><span class="val">${r[1]}</span></div>`;
+    }).join('')}
+  </div>
+  <h4>${p.financial.roiTitle}</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>${p.financial.roiHead.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${p.financial.roiRows.map(r=>`<tr><td class="name">${r[0]}</td>${r.slice(1).map(c=>`<td class="num">${c}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-cap">${p.financial.roiCap}</div>
+  <div class="note">${p.financial.note}</div>
+</section>
+
+<!-- MARKETING -->
+<section class="sec" data-sec="8">
+  <div class="sec-num">SECTION  08</div>
+  <h3>MARKETING STRATEGY</h3>
+  <p class="lead">메시지 · 채널믹스 · 크리에이티브 톤</p>
+  <h4>핵심 메시지 위계</h4>
+  <ul class="blist">
+    ${p.marketing.messages.map(([t,html])=>`<li><span class="tag">${t}</span>${html}</li>`).join('')}
+  </ul>
+  <h4>채널 믹스</h4>
+  <div class="chmix">
+    ${p.marketing.channels.map(([n,pct])=>`
+      <div class="ch-row">
+        <div class="ch-name">${n}</div>
+        <div class="ch-bar"><div class="ch-fill" style="width:${pct}%"></div></div>
+        <div class="ch-pct">${pct}%</div>
+      </div>`).join('')}
+  </div>
+  <h4>크리에이티브 톤</h4>
+  <ul class="blist">
+    ${p.marketing.tones.map(t=>`<li>${t}</li>`).join('')}
+  </ul>
+</section>
+
+<!-- SALES -->
+<section class="sec" data-sec="9">
+  <div class="sec-num">SECTION  09</div>
+  <h3>SALES TIMELINE</h3>
+  <p class="lead">분양·계약·후속 RACI · KPI</p>
+  <div class="timeline">
+    ${p.sales.timeline.map(t=>`
+      <div class="tl-item">
+        <div class="tl-week">${t.week}</div>
+        <div class="tl-title">${t.title}</div>
+        <div class="tl-desc">${t.desc}</div>
+        <div class="tl-kpi">${t.kpi}</div>
+      </div>`).join('')}
+  </div>
+  <h4>RACI 매트릭스</h4>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>${p.sales.raciHead.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${p.sales.raci.map(r=>`<tr><td class="name">${r[0]}</td>${r.slice(1).map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div class="tbl-cap">R 실행 · A 책임 · C 협의 · I 통보</div>
+</section>
+
+<!-- MATERIALS -->
+<section class="sec" data-sec="10">
+  <div class="sec-num">SECTION  10</div>
+  <h3>MATERIALS · 무상품목</h3>
+  <p class="lead">분양가 포함 사양 — 광고 헤드라인화 가능</p>
+  <h4>${p.materials.commonTitle}</h4>
+  <div class="mats">
+    <div class="mat full"><b>${p.materials.commonFull[0]}</b><small>${p.materials.commonFull[1]}</small></div>
+    ${p.materials.common.map(([n,d])=>`<div class="mat"><b>${n}</b><small>${d}</small></div>`).join('')}
+  </div>
+  ${p.materials.extra ? `
+    <h4>${p.materials.extraTitle}</h4>
+    <div class="mats">
+      ${p.materials.extra.map(([n,d])=>`<div class="mat"><b>${n}</b><small>${d}</small></div>`).join('')}
+    </div>` : ''}
+  <div class="note">${p.materials.note}</div>
+</section>
+
+<!-- CONCLUSION -->
+<section class="final" data-sec="11">
+  <div class="ft">CONCLUSION</div>
+  <h3>${p.conclusion.title}</h3>
+  <div class="fmsg">${p.conclusion.message}</div>
+  <div class="sign">
+    <b>(주)리치시스템</b>
+    SALES MARKETING INTELLIGENCE
+  </div>
+</section>
+`;
+}
+
+// ===== 미니맵 재구성 =====
+function rebuildMinimap() {
+  const minimap = document.getElementById('minimap');
+  minimap.innerHTML = '';
+  const sections = document.querySelectorAll('[data-sec]');
+  sections.forEach((s, i) => {
+    const a = document.createElement('a');
+    a.href = '#';
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      s.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    minimap.appendChild(a);
+  });
+  const obs = ('IntersectionObserver' in window) ? new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if(en.isIntersecting){
+        const idx = parseInt(en.target.dataset.sec);
+        document.querySelectorAll('.minimap a').forEach((a, i) => {
+          a.classList.toggle('active', i === idx);
+        });
+      }
+    });
+  }, {threshold: 0.3}) : null;
+  if(obs) sections.forEach(s => obs.observe(s));
+}
+
+// ===== 프로젝트 매칭 =====
+function findProject(addr, name) {
+  const text = (addr + ' ' + (name||'')).toLowerCase();
+  for(const key in PROJECTS){
+    const p = PROJECTS[key];
+    if(p.keys.some(k => text.includes(k.toLowerCase()))){
+      return {key, project: p};
+    }
+  }
+  return null;
+}
+
+// ===== 보고서 적용 =====
+function applyProject(project, isMatched, regionLabel) {
+  document.getElementById('reportBody').innerHTML = renderReport(project);
+  
+  const notice = document.getElementById('reportNotice');
+  if(!isMatched){
+    document.getElementById('rn-title').textContent = `${regionLabel} 지역 자동 생성 — 표준 시세 템플릿 표시 중`;
+    document.getElementById('rn-sub').innerHTML = `<b>${regionLabel}</b> 지역 평균 시세·비교군·수요 페르소나로 자동 생성된 보고서입니다. 실제 운영시 4개 API(국토부 실거래·건축물대장·VWorld·카카오)로 해당 주소 실데이터가 자동 호출되어 정확한 매물·평당가로 갱신됩니다.`;
+    notice.style.display = 'flex';
+  } else {
+    notice.style.display = 'none';
+  }
+  rebuildMinimap();
+}
+
+// ===== 파일 업로드 UI =====
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('pdfinput');
+const fname = document.getElementById('fname');
+
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(f){
+    fname.textContent = '📎 ' + f.name + ' (' + (f.size/1024).toFixed(1) + 'KB)';
+    drop.classList.add('has-file');
+  }
+});
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); drop.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('drag'); }));
+drop.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0];
+  if(f){
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
+  }
+});
+
+// ===== 생성 버튼 =====
+const genBtn = document.getElementById('genBtn');
+const addrInput = document.getElementById('addr');
+const projInput = document.getElementById('proj');
+
+// ===== 백엔드 API 설정 =====
+// 배포 후 본인 Render URL로 교체하세요
+const BACKEND_URL = 'https://richsystem-backend.onrender.com';
+// 로컬 테스트시: const BACKEND_URL = 'http://localhost:5000';
+
+// 백엔드 실데이터 조회 (실패시 null 반환)
+async function fetchRealData(addr, projName){
+  if(!BACKEND_URL) return null;
+  try {
+    const url = `${BACKEND_URL}/api/analyze?address=${encodeURIComponent(addr)}&proj=${encodeURIComponent(projName||'')}`;
+    const res = await fetch(url, { method: 'GET', mode: 'cors' });
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(data.error) return null;
+    return data;
+  } catch(e){
+    console.warn('[backend] 호출 실패 — 템플릿 사용:', e.message);
+    return null;
+  }
+}
+
+// 백엔드 데이터를 프로젝트 객체에 병합
+function mergeRealData(baseProject, realData){
+  if(!realData || !realData.pricing || !realData.pricing.comparables.length){
+    return baseProject;
+  }
+  
+  const comps = realData.pricing.comparables;
+  const stats = realData.pricing.stats;
+  
+  // 매트릭스 행 생성: [단지명, 준공, 전용㎡, 매매(만), 평당가, 거리]
+  const newRows = comps.map(c => [
+    c.name + (c.dong ? ` (${c.dong})` : ''),
+    c.year || '—',
+    c.area_m2.toString(),
+    c.amount_manwon.toLocaleString(),
+    c.pyung_price.toLocaleString(),
+    '—'
+  ]);
+  
+  // 본 현장은 평균값 기준으로 비교 (또는 기존 subject 유지)
+  const subjectName = baseProject.cover.title.replace(/<br>/g,' ').replace(/^★\s*/,'');
+  
+  const merged = JSON.parse(JSON.stringify(baseProject)); // deep clone
+  
+  // PRICING 매트릭스 실데이터 교체
+  merged.pricing.bRows = newRows;
+  merged.pricing.bCap = `✓ 국토부 실거래 ${realData.months_fetched}개월 (${realData.sigungu_name}) · 총 ${stats.total_transactions}건 → 단지별 평균 ${stats.count}개`;
+  merged.pricing.bTitle = `${realData.sigungu_name} 신축 오피스텔 평당가 비교 (실거래)`;
+  
+  // 통계 업데이트
+  merged.pricing.findings = [
+    `<b>지역 평균 평당가: ${stats.avg_pyung.toLocaleString()}만원</b> · 중간값 ${stats.median_pyung.toLocaleString()}만 (${stats.count}개 단지)`,
+    `<b>최저~최고: ${stats.min_pyung.toLocaleString()} ~ ${stats.max_pyung.toLocaleString()}만</b> · 변동폭 ${Math.round((stats.max_pyung-stats.min_pyung)/stats.avg_pyung*100)}%`,
+    `<b>국토부 실거래 데이터 기반</b> (최근 ${realData.months_fetched}개월) · 본 현장 분양가 책정 베이스라인`
+  ];
+  
+  // 임대 시세 적용 (있을 때)
+  if(realData.rent && realData.rent.wolse_median){
+    merged.demand.rental = [
+      ['전세 (만원)', 
+       (realData.rent.jeonse_min || 0).toLocaleString(),
+       (realData.rent.jeonse_median || 0).toLocaleString(),
+       (realData.rent.jeonse_max || 0).toLocaleString()],
+      ['보증금 (만원)', '500', '1,000', '3,000'],
+      ['월세 (만원)',
+       (realData.rent.wolse_min || 0).toString(),
+       (realData.rent.wolse_median || 0).toString(),
+       (realData.rent.wolse_max || 0).toString()],
+      ['표본 수', '—', realData.rent.sample_count + '건', '—']
+    ];
+    merged.demand.rentCap = `✓ 국토부 전월세 실거래 ${realData.months_fetched}개월 (${realData.sigungu_name})`;
+  }
+  
+  // 좌표 우선 적용
+  if(realData.coords){
+    merged.coords = realData.coords;
+  }
+  
+  // KPI에 실데이터 반영
+  if(merged.exec && merged.exec.kpis && stats.avg_pyung){
+    merged.exec.kpis[0] = ['지역 평균 평당가', stats.avg_pyung.toLocaleString(), '만/평', `${stats.count}개 단지 실거래`];
+    merged.exec.kpis[1] = ['중간값 평당가', stats.median_pyung.toLocaleString(), '만/평', `최저 ${stats.min_pyung.toLocaleString()} ~ 최고 ${stats.max_pyung.toLocaleString()}`];
+  }
+  
+  // 표시용 메타데이터
+  merged._realDataApplied = true;
+  merged._realDataMeta = {
+    sigungu: realData.sigungu_name,
+    transactions: stats.total_transactions,
+    months: realData.months_fetched,
+    fetchedAt: realData.fetched_at
+  };
+  
+  return merged;
+}
+
+genBtn.addEventListener('click', async () => {
+  const addr = addrInput.value.trim();
+  if(!addr){
+    addrInput.focus();
+    addrInput.style.borderColor = '#FF6B6B';
+    setTimeout(() => addrInput.style.borderColor = '', 1500);
+    return;
+  }
+  genBtn.classList.add('loading');
+  genBtn.disabled = true;
+  
+  // 베이스 프로젝트 선정 (사전입력 우선)
+  const matched = findProject(addr, projInput.value);
+  let baseProject, isMatched, regionLabel;
+  
+  if(matched){
+    baseProject = matched.project;
+    isMatched = true;
+  } else {
+    const regionKey = detectRegion(addr);
+    if(regionKey === 'kcc_jeonha_match'){
+      baseProject = PROJECTS.kcc_jeonha;
+      isMatched = true;
+    } else {
+      const projType = document.getElementById('ptype').value;
+      baseProject = generateProjectFromRegion(addr, projInput.value, projType, regionKey);
+      regionLabel = REGIONS[regionKey].name;
+      isMatched = false;
+    }
+  }
+  
+  // 백엔드 실데이터 조회 시도 (병렬, 5초 timeout)
+  let realData = null;
+  try {
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 15000)); // 15초 (콜드스타트 대응)
+    realData = await Promise.race([
+      fetchRealData(addr, projInput.value),
+      timeoutPromise
+    ]);
+  } catch(e){
+    console.warn('Backend fetch error:', e);
+  }
+  
+  // 실데이터 있으면 병합, 없으면 템플릿 그대로
+  const finalProject = realData ? mergeRealData(baseProject, realData) : baseProject;
+  
+  // 적용
+  applyProject(finalProject, isMatched && !realData, regionLabel);
+  
+  // 실데이터 적용 알림
+  if(realData){
+    const notice = document.getElementById('reportNotice');
+    if(notice){
+      const m = finalProject._realDataMeta;
+      notice.style.background = '#E8F2EC';
+      notice.style.borderLeftColor = '#1F7A4D';
+      document.getElementById('rn-title').textContent = '✓ 국토부 실거래 데이터 적용';
+      document.getElementById('rn-title').style.color = '#0F4A2C';
+      document.getElementById('rn-sub').innerHTML = `${m.sigungu} 지역 · 최근 ${m.months}개월 · 총 ${m.transactions}건 실거래 분석`;
+      document.getElementById('rn-sub').style.color = '#1F7A4D';
+      notice.style.display = 'flex';
+    }
+  }
+  
+  genBtn.classList.remove('loading');
+  genBtn.disabled = false;
+  document.getElementById('report').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+// ===== 지역 데이터베이스 (임의 주소 지원) =====
+const REGIONS = {
+  seoul_gangseo: {
+    name:'강서 (화곡·발산·가양)', city:'서울특별시 강서구',
+    coords:{lat:37.541,lng:126.853},
+    basePyung:2200, sector:'1인 가구·공항 직장권',
+    employers:['김포공항','LG사이언스파크 마곡','메이필드호텔','이마트 가양'],
+    transit:'5호선·9호선·공항철도', station:'화곡역(5호선) / 가양역(9호선)',
+    landmark:'마곡지구·발산·김포공항',
+    comps:[
+      ['화곡 두산위브','2020','36.5','39,800','2,140','5분'],
+      ['우장산 한일유앤아이','2019','38.0','42,500','2,201','8분'],
+      ['가양 9단지 휴엔하임','2021','37.2','44,800','2,371','11분'],
+      ['발산 두산위브센티움','2018','35.8','38,200','2,098','15분'],
+      ['마곡 엠벨리 14단지','2017','39.5','46,500','2,318','22분'],
+      ['화곡 e편한세상','2020','37.0','41,200','2,191','7분'],
+      ['까치산 푸르지오시티','2022','35.5','42,800','2,371','12분'],
+      ['신정 푸르지오','2019','38.5','43,500','2,222','25분']
+    ],
+    rentMonthly:65, rentRange:[50,80],
+    persona:'urban_singles',
+    media:['카카오 강서·양천','네이버 부동산','강서구 지역카페','지하철 화곡역 옥외']
+  },
+  seoul_magok: {
+    name:'마곡지구', city:'서울특별시 강서구 마곡동',
+    coords:{lat:37.567,lng:126.823},
+    basePyung:2850, sector:'대기업 R&D·바이오',
+    employers:['LG사이언스파크','코오롱원앤온리타워','넥센타이어','이마트'],
+    transit:'5호선·9호선·공항철도', station:'마곡역(5호선) / 마곡나루역(9호선)',
+    landmark:'서울식물원·LG사이언스파크·코오롱타워',
+    comps:[
+      ['마곡 엠밸리 14단지','2017','39.5','55,800','2,780','5분'],
+      ['마곡엠밸리 7단지','2018','37.8','54,200','2,820','7분'],
+      ['마곡 13단지 힐스테이트','2017','40.2','58,500','2,860','9분'],
+      ['마곡 두산위브','2019','38.5','57,200','2,924','6분'],
+      ['마곡 푸르지오 시티','2020','36.0','52,800','2,888','12분'],
+      ['마곡 자이 한강','2021','41.0','62,500','3,001','15분'],
+      ['발산 마곡엠밸리 9단지','2017','37.5','51,200','2,690','13분'],
+      ['마곡 SK V1 타워(오피스텔)','2019','38.8','56,800','2,884','4분']
+    ],
+    rentMonthly:90, rentRange:[75,110],
+    persona:'corporate_singles',
+    media:['LG사이언스파크 사내','네이버 부동산','카카오 모먼트','마곡 지역 카페']
+  },
+  seoul_yangcheon: {
+    name:'목동·신정', city:'서울특별시 양천구',
+    coords:{lat:37.526,lng:126.866},
+    basePyung:2900, sector:'학군·전문직 가족',
+    employers:['목동 학원가','SBS·CBS','이대목동병원','목동 법조타운'],
+    transit:'5호선·2호선·9호선', station:'오목교역(5호선) / 목동역(5호선)',
+    landmark:'목동운동장·하이페리온·현대백화점',
+    comps:[
+      ['목동 센트럴아이파크','2019','39.0','58,500','2,945','5분'],
+      ['목동 하이페리온 오피스텔','2003','40.5','62,200','3,012','3분'],
+      ['신정 르엘','2021','38.5','56,800','2,895','8분'],
+      ['목동 위브센티움','2018','39.8','57,500','2,839','6분'],
+      ['신정 푸르지오시티','2020','37.2','53,800','2,838','12분'],
+      ['목동 트라움하우스','2017','38.0','55,200','2,851','9분'],
+      ['오목교 푸르지오','2022','40.0','62,800','3,082','7분'],
+      ['목동 KCC스위첸','2020','39.5','58,200','2,890','11분']
+    ],
+    rentMonthly:80, rentRange:[65,100],
+    persona:'family_education',
+    media:['목동 학부모 카페','네이버 부동산','조선일보 부동산','강서양천신문']
+  },
+  seoul_guro: {
+    name:'구로·신도림·가산', city:'서울특별시 구로구',
+    coords:{lat:37.503,lng:126.887},
+    basePyung:2400, sector:'IT·디지털산업단지',
+    employers:['G밸리(구로디지털단지)','넷마블','크래프톤','신도림 테크노마트'],
+    transit:'1·2·7호선', station:'신도림역(1·2호선) / 가산디지털단지역(1·7호선)',
+    landmark:'테크노마트·디큐브시티·디지털단지',
+    comps:[
+      ['신도림 e편한세상','2021','38.0','47,800','2,512','5분'],
+      ['구로 두산위브','2019','37.5','44,200','2,353','9분'],
+      ['가산 디지털 SK뷰','2020','36.5','45,500','2,488','6분'],
+      ['신도림 디큐브시티','2011','40.2','52,500','2,564','3분'],
+      ['구로 우림카운티','2018','38.5','45,800','2,378','12분'],
+      ['가산 두산위브','2017','37.0','43,500','2,346','8분'],
+      ['신도림 푸르지오','2022','39.0','50,200','2,569','11분'],
+      ['구로 자이','2020','38.8','47,500','2,449','14분']
+    ],
+    rentMonthly:70, rentRange:[55,90],
+    persona:'urban_singles_it',
+    media:['네이버 부동산','카카오 모먼트','구로 IT 직장인 카페','지역 옥외광고']
+  },
+  seoul_dongdaemun: {
+    name:'동대문·답십리·청량리', city:'서울특별시 동대문구',
+    coords:{lat:37.58,lng:127.046},
+    basePyung:2450, sector:'대학·재개발 중심지',
+    employers:['청량리 한국외대','경희대','시립대','동대문 도매상권'],
+    transit:'1·2·6호선·경의중앙·분당선', station:'청량리역(GTX-B 예정) / 답십리역(5호선)',
+    landmark:'청량리 롯데캐슬·답십리 재개발·홍릉',
+    comps:[
+      ['청량리 롯데캐슬 SKY-L65','2023','40.5','55,800','2,756','5분'],
+      ['답십리 래미안미드카운티','2021','38.5','48,800','2,536','3분'],
+      ['청량리 한양수자인','2020','39.0','51,200','2,627','7분'],
+      ['답십리 e편한세상 청계','2019','37.8','46,500','2,460','9분'],
+      ['동대문 푸르지오','2022','39.5','54,200','2,747','11분'],
+      ['답십리 두산위브','2018','38.0','45,500','2,396','6분'],
+      ['전농 SK뷰','2020','38.5','47,800','2,484','12분'],
+      ['장안 자이','2021','39.2','52,500','2,679','15분']
+    ],
+    rentMonthly:70, rentRange:[55,90],
+    persona:'student_urban',
+    media:['네이버 부동산','카카오 모먼트','대학가 카페','동대문 지역 매체']
+  },
+  seoul_premium: { // 강남·서초·송파·용산
+    name:'강남·서초·송파·용산', city:'서울특별시 강남권',
+    coords:{lat:37.498,lng:127.027},
+    basePyung:4500, sector:'전문직·고소득 1인·외국인',
+    employers:['삼성','네이버','카카오','글로벌 본사','한남동 외국인'],
+    transit:'2·3·7·9호선·신분당', station:'역세권 다수',
+    landmark:'코엑스·롯데월드타워·한강·이태원',
+    comps:[
+      ['강남 더샵 갤러리','2021','38.5','85,200','4,902','5분'],
+      ['서초 자이','2020','39.0','82,500','4,683','7분'],
+      ['송파 헬리오시티 오피스텔','2018','40.2','78,800','4,475','9분'],
+      ['한남 더힐 레지던스','2022','41.5','92,500','5,072','3분'],
+      ['청담 SK뷰','2019','38.0','80,200','4,673','12분'],
+      ['용산 푸르지오써밋','2021','39.5','86,800','4,873','6분'],
+      ['반포 자이','2020','38.8','81,500','4,652','11분'],
+      ['삼성동 아이파크','2017','37.5','75,500','4,455','14분']
+    ],
+    rentMonthly:170, rentRange:[130,250],
+    persona:'corporate_premium',
+    media:['조선일보·중앙일보 부동산','네이버 부동산 프리미엄','한경 머니','강남 인플루언서']
+  },
+  seoul_mapo_yongsan: { // 마포·홍대·성수
+    name:'마포·홍대·성수', city:'서울특별시 마포·성동권',
+    coords:{lat:37.547,lng:126.937},
+    basePyung:3300, sector:'미디어·IT·크리에이티브',
+    employers:['카카오 판교 이주','SM·JYP·하이브','네이버 그린팩토리','광고대행사'],
+    transit:'2·5·6호선·경의중앙·공항철도', station:'홍대입구역·합정역·성수역',
+    landmark:'홍대 거리·연남동·성수동·DMC',
+    comps:[
+      ['공덕 SK뷰','2020','38.5','62,500','3,361','5분'],
+      ['홍대 푸르지오','2019','37.8','58,200','3,193','7분'],
+      ['성수 트리마제','2017','39.5','65,800','3,452','9분'],
+      ['상수 자이엘라','2021','40.0','64,200','3,328','6분'],
+      ['합정 메세나폴리스','2012','38.0','58,500','3,193','3분'],
+      ['망원 e편한세상','2020','38.8','62,800','3,355','11분'],
+      ['성수 갤러리아포레','2011','41.0','68,500','3,464','12분'],
+      ['신촌 푸르지오시티','2022','39.0','62,200','3,303','8분']
+    ],
+    rentMonthly:115, rentRange:[90,140],
+    persona:'media_creative',
+    media:['카카오 모먼트','인스타그램 광고','네이버 부동산','홍대 옥외']
+  },
+  incheon_songdo: {
+    name:'송도국제도시', city:'인천광역시 연수구 송도동',
+    coords:{lat:37.389,lng:126.642},
+    basePyung:2200, sector:'바이오·외국인투자·국제업무',
+    employers:['셀트리온','삼성바이오로직스','국제기구','인천대학교'],
+    transit:'인천1호선·수인분당선·GTX-B(예정)', station:'센트럴파크역·국제업무지구역',
+    landmark:'센트럴파크·G타워·송도컨벤시아',
+    comps:[
+      ['송도 더샵 센트럴파크','2018','38.5','42,500','2,283','5분'],
+      ['송도 자이크리스탈오션','2021','39.0','44,800','2,375','7분'],
+      ['송도 SK뷰 센트럴파크','2019','38.0','41,200','2,243','9분'],
+      ['송도 더샵 퍼스트파크','2017','37.5','38,800','2,142','11분'],
+      ['송도 호반베르디움','2020','38.8','43,500','2,322','6분'],
+      ['송도 푸르지오','2022','40.0','46,200','2,388','8분'],
+      ['송도 더샵 마스터뷰','2018','37.8','40,500','2,222','12분'],
+      ['청라 호반베르디움','2020','38.0','37,500','2,043','25분']
+    ],
+    rentMonthly:80, rentRange:[65,100],
+    persona:'corporate_singles',
+    media:['카카오 모먼트(인천)','네이버 부동산','송도 학부모 카페','인천일보']
+  },
+  gyeonggi_pangyo: {
+    name:'판교·분당·동탄', city:'경기 성남·화성권',
+    coords:{lat:37.395,lng:127.111},
+    basePyung:3500, sector:'IT 본사·테크·자율주행',
+    employers:['카카오','네이버','엔씨소프트','삼성SDS','현대모비스'],
+    transit:'신분당선·분당선·GTX-A', station:'판교역(신분당)·동탄역(GTX-A)',
+    landmark:'판교 테크노밸리·동탄2신도시·분당',
+    comps:[
+      ['판교 알파리움','2019','38.5','68,200','3,580','5분'],
+      ['분당 정자 두산위브','2020','39.0','65,800','3,406','7분'],
+      ['동탄 더샵 센트럴시티','2021','38.0','62,500','3,323','9분'],
+      ['판교 푸르지오월드마크','2022','40.0','72,500','3,664','3분'],
+      ['분당 미금 SK뷰','2019','38.5','64,200','3,367','11분'],
+      ['동탄 자이','2020','39.5','65,800','3,365','12분'],
+      ['판교 아이파크','2018','37.8','66,500','3,558','8분'],
+      ['수내 푸르지오','2017','38.0','60,500','3,222','14분']
+    ],
+    rentMonthly:110, rentRange:[85,140],
+    persona:'corporate_tech',
+    media:['카카오·네이버 사내','네이버 부동산','판교 IT 직장인 카페','테크 컨퍼런스']
+  },
+  busan_haeundae: {
+    name:'해운대·센텀시티', city:'부산광역시 해운대구',
+    coords:{lat:35.163,lng:129.16},
+    basePyung:2300, sector:'관광·세컨하우스·금융 IT',
+    employers:['벡스코','센텀시티 영상산업','해운대 호텔','부산국제금융센터'],
+    transit:'2호선·동해선', station:'센텀시티역·해운대역',
+    landmark:'해운대 해변·센텀시티·마린시티',
+    comps:[
+      ['해운대 엘시티 더샵','2020','39.0','46,800','2,366','5분'],
+      ['마린시티 자이','2018','38.5','44,500','2,279','9분'],
+      ['센텀시티 푸르지오','2019','38.0','43,200','2,243','7분'],
+      ['해운대 두산위브포세이돈','2017','40.0','46,500','2,287','11분'],
+      ['수영 더샵','2021','37.8','42,800','2,232','15분'],
+      ['센텀 SK뷰','2020','38.5','44,200','2,263','8분'],
+      ['해운대 아이파크','2019','39.5','47,800','2,386','6분'],
+      ['민락 더샵센텀스타','2022','38.8','45,500','2,310','13분']
+    ],
+    rentMonthly:75, rentRange:[60,100],
+    persona:'second_home_tourism',
+    media:['부산일보·국제신문','카카오 모먼트(부산)','네이버 부동산','센텀 옥외']
+  },
+  generic_seoul: {
+    name:'서울 (일반)', city:'서울특별시',
+    coords:{lat:37.566,lng:126.978},
+    basePyung:2600, sector:'도심 직장권',
+    employers:['주요 기업 본사','대학·연구기관','문화시설'],
+    transit:'지하철 다수 노선', station:'도보 권역 역',
+    landmark:'주요 상권·공원',
+    comps:[
+      ['주변 단지 A','2021','38.5','50,200','2,627','7분'],
+      ['주변 단지 B','2020','37.8','48,500','2,572','9분'],
+      ['주변 단지 C','2019','38.0','47,200','2,491','11분'],
+      ['주변 단지 D','2022','39.0','51,500','2,646','5분'],
+      ['주변 단지 E','2018','37.5','45,800','2,449','13분'],
+      ['주변 단지 F','2020','38.8','49,500','2,557','8분']
+    ],
+    rentMonthly:75, rentRange:[60,95],
+    persona:'urban_singles',
+    media:['네이버 부동산','카카오 모먼트','지역 매체','옥외광고']
+  },
+  generic_metro: {
+    name:'광역시 (일반)', city:'광역시',
+    coords:{lat:35.18,lng:129.075},
+    basePyung:1500, sector:'광역시 직장권',
+    employers:['주요 기업','산업단지','상업지구'],
+    transit:'지하철·간선버스', station:'역세권',
+    landmark:'중심 상권·공원',
+    comps:[
+      ['주변 단지 A','2021','38.0','29,500','1,560','7분'],
+      ['주변 단지 B','2020','37.5','28,200','1,508','9분'],
+      ['주변 단지 C','2019','38.5','29,800','1,553','11분'],
+      ['주변 단지 D','2022','39.0','31,200','1,602','5분'],
+      ['주변 단지 E','2018','37.0','26,500','1,432','13분'],
+      ['주변 단지 F','2020','38.5','29,200','1,521','8분']
+    ],
+    rentMonthly:55, rentRange:[40,75],
+    persona:'urban_singles',
+    media:['지역 일간지','카카오 모먼트','네이버 부동산','지역 카페']
+  },
+  generic_provincial: {
+    name:'지방 도시 (일반)', city:'지방 도시',
+    coords:{lat:36.332,lng:127.435},
+    basePyung:900, sector:'지역 직장권',
+    employers:['지역 기업','산업단지','중소기업'],
+    transit:'시내버스·고속도로', station:'지역 중심',
+    landmark:'중심 상권',
+    comps:[
+      ['주변 단지 A','2021','38.0','17,500','926','7분'],
+      ['주변 단지 B','2020','37.5','16,800','892','9분'],
+      ['주변 단지 C','2019','38.5','17,200','897','11분'],
+      ['주변 단지 D','2022','39.0','18,500','949','5분'],
+      ['주변 단지 E','2018','37.0','15,800','853','15분'],
+      ['주변 단지 F','2020','38.5','17,200','895','8분']
+    ],
+    rentMonthly:38, rentRange:[28,55],
+    persona:'urban_singles',
+    media:['지역 일간지','지역 부동산 카페','네이버 부동산']
+  }
+};
+
+// ===== 지역 자동 감지 =====
+function detectRegion(addr) {
+  const a = addr.replace(/\s+/g,'');
+  // 서울 강서·마곡
+  if(/마곡|발산/.test(a)) return 'seoul_magok';
+  if(/화곡|강서구|등촌|가양|염창|방화|공항동|개화/.test(a)) return 'seoul_gangseo';
+  // 양천·구로
+  if(/목동|신정동|신월동|양천구/.test(a)) return 'seoul_yangcheon';
+  if(/구로|신도림|가산|독산|개봉|오류동/.test(a)) return 'seoul_guro';
+  // 동대문·답십리
+  if(/답십리|동대문구|청량리|전농|장안|이문|회기|용두/.test(a)) return 'seoul_dongdaemun';
+  // 강남권 프리미엄
+  if(/강남|서초|송파|용산구|한남|이태원|반포|잠실|청담|역삼|삼성동|논현|신사|개포|대치|도곡|압구정|이촌/.test(a)) return 'seoul_premium';
+  // 마포·성수·홍대
+  if(/마포|홍대|연남|망원|합정|상수|성수|왕십리|성동구|서대문/.test(a)) return 'seoul_mapo_yongsan';
+  // 기타 서울
+  if(/서울특별시|서울시|서울/.test(a)) return 'generic_seoul';
+  // 인천
+  if(/송도|연수구|청라|영종|검단/.test(a)) return 'incheon_songdo';
+  // 경기 판교·분당·동탄
+  if(/판교|분당|정자|미금|수내|동탄|광교|영통|용인|수원|성남/.test(a)) return 'gyeonggi_pangyo';
+  // 부산 해운대
+  if(/해운대|센텀|마린시티|광안|수영|남구|동래/.test(a)) return 'busan_haeundae';
+  // 울산 동구
+  if(/전하|일산동|울산|남목|방어동/.test(a)) return 'kcc_jeonha_match'; // 기존 KCC 매칭 우선
+  // 광역시
+  if(/부산|대구|광주|대전|울산|인천/.test(a)) return 'generic_metro';
+  // 경기 서남부 (광명·부천·안양·시흥)
+  if(/광명|부천|안양|시흥|군포|의왕|과천/.test(a)) return 'generic_seoul';
+  // 경기 일산·고양
+  if(/일산|고양|파주/.test(a)) return 'generic_seoul';
+  // 기타 지방
+  return 'generic_provincial';
+}
+
+// ===== 지역 템플릿 → 프로젝트 데이터 자동 생성 =====
+function generateProjectFromRegion(addr, projName, ptype, regionKey) {
+  const r = REGIONS[regionKey];
+  const title = (projName && projName.trim() && projName !== '파크라움 여의도 오피스텔') ? projName.trim() : `${r.name} 신축 오피스텔`;
+  const pyTypeB = Math.round(r.basePyung * 0.97);
+  const pyTypeC = Math.round(r.basePyung * 1.15);
+  const supplyB = 19.1, supplyC = 23.8;
+  const priceB = Math.round(pyTypeB * supplyB / 10) * 10;
+  const priceC = Math.round(pyTypeC * supplyC / 10) * 10;
+  const yieldEst = ((r.rentMonthly * 12) / (priceB * 10) * 100).toFixed(1);
+  
+  const isResid = ptype && ptype.includes('잔여');
+  const isPreSale = ptype && ptype.includes('신규');
+  const phase = isResid ? '잔여분양' : (isPreSale ? '신규분양 (선분양)' : '신규분양');
+  
+  return {
+    coords: r.coords,  // ★ 지역 중심 좌표 (Kakao 지도용)
+    cover: {
+      title: title.replace(/\s/g,'<br>'),
+      address: addr,
+      meta: [
+        ['분양유형', phase],
+        ['입주예정', isResid ? '즉시입주' : '2027년 예정'],
+        ['총세대','오피스텔 추정 80~120실'],
+        ['B타입 평당가', pyTypeB.toLocaleString()+'만원'],
+        ['지역', r.name],
+        ['핵심수요', r.sector.split('·')[0]]
+      ]
+    },
+    exec: {
+      kpis: [
+        ['B타입 평당가', pyTypeB.toLocaleString(),'만/평','지역 평균 -2.0%'],
+        ['C타입 평당가', pyTypeC.toLocaleString(),'만/평','지역 평균 +3.5%'],
+        ['예상 월세', r.rentMonthly+'','만/월','갭투자 적정'],
+        ['예상 수익률', yieldEst,'%/년','자기자본 ROI']
+      ],
+      verdict: {
+        main: `"${r.name} ${r.sector}" — ${r.landmark.split('·')[0]} 권역 활용`,
+        sub: `${r.name} 지역은 ${r.sector} 중심으로 임차수요 안정. 신축 오피스텔 공급 대비 수요 우위 구간에서 평당 ${r.basePyung.toLocaleString()}만원선 적정. 핵심 직장권(${r.employers.slice(0,2).join('·')}) 1인 가구 + 갭투자 듀얼 타겟이 효과적.`
+      },
+      recoms: [
+        ['전략', `<b>"${r.name} 신축, ${r.landmark.split('·')[0]} 직주근접"</b> 단일 헤드라인 — ${r.sector} 수요층 집중`],
+        ['가격', `B타입 갭투자 진입가(약 ${(priceB/10000).toFixed(1)}억)·C타입 실거주 분리 캠페인`],
+        ['채널', `${r.media.slice(0,3).join('·')} 중심 — <b>지역 디지털 50% · 옥외/BTL 30% · ATL 20%</b>`]
+      ]
+    },
+    overview: {
+      info: [
+        ['공급위치', addr, null, null, 'colspan'],
+        ['지역 특성', r.sector,'주요 직장권', r.employers[0]],
+        ['주요 교통', r.transit,'역세권', r.station],
+        ['주변 핵심', r.landmark.split('·')[0],'평당가 기준', r.basePyung.toLocaleString()+'만원'],
+        ['임대시장', `월 ${r.rentRange[0]}~${r.rentRange[1]}만 시세`,'타겟 페르소나', r.persona.replace('_',' ')],
+        ['분양 유형', phase,'분양가 추정', `${(priceB/10000).toFixed(1)}억 ~ ${(priceC/10000).toFixed(1)}억`]
+      ],
+      supplyTitle:'공급 타입 (추정)',
+      supplyHead:['타입','호실','전용㎡','공급㎡','평당가','분양가(만원)'],
+      supply:[
+        ['A','10~15','26.0','41.5',Math.round(pyTypeB*0.92).toLocaleString(), Math.round(pyTypeB*0.92*12.55).toLocaleString()],
+        ['B','30~50','40.0','63.1', pyTypeB.toLocaleString(), priceB.toLocaleString()],
+        ['C','15~25','50.0','78.8', pyTypeC.toLocaleString(), priceC.toLocaleString()]
+      ],
+      supplyCap:`※ 추정 데이터 — 실제 분양가는 사업주체 확정 기준 / ${r.name} 지역 평균 적용`,
+      note:`<b>현장 특성 노트</b> · ${addr} 일대는 ${r.sector} 중심으로 임차수요 형성. 인근 신축 오피스텔 평당가 평균 약 ${r.basePyung.toLocaleString()}만원선. ${r.landmark} 인프라 활용 가능. 실제 시세는 국토부 실거래 API 연동시 즉시 갱신됩니다.`
+    },
+    location: {
+      strengths: [
+        ['직장', `<b>${r.employers.slice(0,2).join('·')}</b> 등 핵심 직장권 — 임차 수요 안정.`],
+        ['교통', `<b>${r.transit}</b> 노선 활용. ${r.station} 도보권.`],
+        ['생활', `<b>${r.landmark}</b> 권역 — 상업·문화·여가 인프라 확보.`],
+        ['수요', `<b>${r.sector}</b> 타겟층 집중 분포 — 안정적 임대수요·매매수요.`]
+      ],
+      facilHead:['구분','시설','거리','이동'],
+      facilities:[
+        ['지하철', r.station.split('/')[0].trim(),'500~800m','7~12분(도보)'],
+        ['직장', r.employers[0],'1.0~1.5km','15~20분(도보)'],
+        ['직장', r.employers[1],'1.5~2.5km','5~8분(차량)'],
+        ['상권', r.landmark.split('·')[0],'500m 내외','6~10분(도보)'],
+        ['편의시설', r.landmark.split('·')[1] || '주변 상권','1km 내외','12~15분(도보)'],
+        ['기타', '주변 학교·의료시설','도보권','입주민 편의']
+      ],
+      facilCap:'※ 추정치 — 실제 거리는 카카오 모빌리티 API 연동시 정확 산출'
+    },
+    demand: {
+      personas:[
+        ['P1 · 40%', `${r.sector.split('·')[0]} 1인 가구`, `${r.employers[0]} 등 인근 직장 근무자. 출퇴근 편의·풀옵션 선호.`],
+        ['P2 · 30%','임대수익형 갭투자자',`월세 ${r.rentRange[0]}~${r.rentRange[1]}만 안정 수익 추구. 자기자본 약 ${Math.round(priceB*0.4/10000)}억 수준.`],
+        ['P3 · 20%','부부·법인 사택',`C타입(50㎡) 부부 거주 또는 ${r.employers[0]} 협력사 사택. 부가세 환급 활용.`],
+        ['P4 · 10%','세컨하우스·증여',`자녀 직장·학업 근접용. 지방 거주 부모의 ${r.name} 거점 확보.`]
+      ],
+      rentTitle:`${r.name} 오피스텔 임대시장 (전용 30~45㎡ 기준)`,
+      rentHead:['지표','최저','평균','최고'],
+      rental:[
+        ['전세 (만원)', Math.round(r.rentMonthly*180).toLocaleString(), Math.round(r.rentMonthly*220).toLocaleString(), Math.round(r.rentMonthly*280).toLocaleString()],
+        ['보증금 (만원)','500','1,000','3,000'],
+        ['월세 (만원)', r.rentRange[0]+'', r.rentMonthly+'', r.rentRange[1]+''],
+        ['공실률','3%','5%','8%']
+      ],
+      rentCap:'※ 국토부 실거래·디스코·네이버 부동산 종합 추정'
+    },
+    product: {
+      bTitle:'B타입 (전용 40㎡대) — 갭투자·1인 실거주 듀얼',
+      bBullets:[
+        `<b>${r.sector} 표준 평형</b> — ${r.employers[0]} 도보 통근 가능`,
+        `<b>${(priceB/10000).toFixed(1)}억대 진입가</b>로 지역 신축 메인 가격대 — 자기자본 약 ${Math.round(priceB*0.4/10000)}억`,
+        `<b>월세 ${r.rentMonthly}만 수익</b> 기준 표면수익률 약 ${yieldEst}% 확보 가능`
+      ],
+      cTitle:'C타입 (전용 50㎡대) — 부부·법인 사택',
+      cBullets:[
+        `<b>전용 50㎡ / 공급 78㎡</b> — 부부 또는 자녀 1명까지 거주`,
+        `<b>${r.employers[0]} 사택 대체 수요</b> — 법인 매수시 부가세 환급 + 임원 거주`,
+        `<b>${r.landmark} 인프라</b> 활용 — 실거주 만족도 확보`
+      ],
+      swot:{
+        s:`${r.sector} / ${r.transit} / ${r.landmark}`,
+        w:'지역 신축 후속 공급 가능성 / 금리 환경 민감',
+        o:`${r.employers[0]} 확장·이전 모멘텀 / 임대료 상승 여력`,
+        t:'분양가 상한 압박 / 지역 부동산 사이클'
+      }
+    },
+    pricing:{
+      bTitle:`${r.name} 신축 오피스텔 평당가 비교 (B타입 기준)`,
+      bHead:['단지','준공','전용㎡','매매(만)','평당가','거리'],
+      bSubject:[`★ ${title.replace(/<br>/g,' ')} B`,'신축','40.0', priceB.toLocaleString(), pyTypeB.toLocaleString(),'—'],
+      bRows: r.comps,
+      bCap:'※ 국토부 실거래(최근 6개월)·디스코·네이버 부동산 종합 / B타입 공급면적 기준',
+      cTitle:'C타입 비교군 (전용 48~52㎡)',
+      cHead:['단지','전용㎡','매매(만)','평당가'],
+      cSubject:[`★ ${title.replace(/<br>/g,' ')} C`,'50.0', priceC.toLocaleString(), pyTypeC.toLocaleString()],
+      cRows: r.comps.slice(0,4).map(c => [c[0]+' C', (parseFloat(c[2])*1.25).toFixed(1), Math.round(parseFloat(c[3].replace(/,/g,''))*1.55).toLocaleString(), Math.round(parseFloat(c[4].replace(/,/g,''))*1.18).toLocaleString()]),
+      findings:[
+        `<b>B타입 평당 ${pyTypeB.toLocaleString()}만원</b> — ${r.name} 신축 평균 대비 약 -2% · 매력 가격대 ✅`,
+        `<b>C타입 평당 ${pyTypeC.toLocaleString()}만원</b> — 지역 프리미엄 평형 평균 대비 +3% 수준 · 적정`,
+        `<b>${r.employers[0]} 임직원·갭투자</b> 듀얼 타겟이 가격 정당성 인식 ↑`
+      ]
+    },
+    financial:{
+      simTitle:`B타입 갭투자 시나리오 (분양가 ${(priceB/10000).toFixed(2)}억)`,
+      simRows:[
+        ['분양가 (VAT 포함)', (priceB*10000).toLocaleString()+'원'],
+        ['계약금 10%', (priceB*1000).toLocaleString()+'원'],
+        ['잔금 90%', (priceB*9000).toLocaleString()+'원'],
+        ['잔금대출 60% (연 5.0%)', (priceB*6000).toLocaleString()+'원'],
+        ['월 이자 부담', Math.round(priceB*6000*0.05/12).toLocaleString()+'원'],
+        ['예상 월세 수익', '+ '+(r.rentMonthly*10000).toLocaleString()+'원', 'pos'],
+        ['실 자기자본', (priceB*4000).toLocaleString()+'원', 'pos', 'total']
+      ],
+      roiTitle:'임대수익률 시나리오',
+      roiHead:['구분','보수적','중간','적극적'],
+      roiRows:[
+        ['월세 (만원)', r.rentRange[0]+'', r.rentMonthly+'', r.rentRange[1]+''],
+        ['연 임대수입', (r.rentRange[0]*12)+'', (r.rentMonthly*12)+'', (r.rentRange[1]*12)+''],
+        ['표면 수익률', ((r.rentRange[0]*12)/(priceB)*100).toFixed(2)+'%', ((r.rentMonthly*12)/(priceB)*100).toFixed(2)+'%', ((r.rentRange[1]*12)/(priceB)*100).toFixed(2)+'%'],
+        ['자기자본 수익률', ((r.rentRange[0]*12)/(priceB*0.4)*100).toFixed(2)+'%', ((r.rentMonthly*12)/(priceB*0.4)*100).toFixed(2)+'%', ((r.rentRange[1]*12)/(priceB*0.4)*100).toFixed(2)+'%']
+      ],
+      roiCap:'※ 잔금대출 60%·5%·30년 거치 기준 · 보증금 1,000만원 / 부가세 환급 별도',
+      note:`<b>법인·일반과세자</b> 계약시 부가세 환급(약 ${Math.round(priceB*0.1).toLocaleString()}만원) 활용 가능 → 실 자기자본 약 ${Math.round(priceB*0.36/10000)}억으로 추가 절감.`
+    },
+    marketing:{
+      messages:[
+        ['메인', `<b>"${r.name} 신축, ${r.landmark.split('·')[0]} 직주근접"</b>`],
+        ['서브1', `"${r.employers[0]} 도보 통근 가능" — 직장권 강조`],
+        ['서브2', `"월세 ${r.rentMonthly}만 갭투자 ROI ${yieldEst}%" — 수익 모델 명시`],
+        ['서브3', `"${phase} · 지역 신축 희소" — 공급 한정 어필`]
+      ],
+      channels:[
+        [r.media[0] || '네이버 부동산', 25],
+        [r.media[1] || '카카오 모먼트', 18],
+        [r.media[2] || '지역 매체', 15],
+        [r.media[3] || '옥외광고', 12],
+        ['한경·매경 부동산', 10],
+        ['부동산 카페·인플루언서', 10],
+        ['DM·전단', 5],
+        ['기타 BTL', 5]
+      ],
+      tones:[
+        '<b>네이비 + 골드</b> 컨설팅 톤 일관 — 신뢰감 확보',
+        `${r.landmark.split('·')[0]} 비주얼 + 평당가·수익률 인포그래픽 병행`,
+        '15초 / 30초 영상 — 인스트림·릴스 중심 분기 활용'
+      ]
+    },
+    sales:{
+      timeline:[
+        {week:'W1 · 사전마케팅', title:'견본주택 오픈 전 인지 형성', desc:`${r.media.slice(0,2).join('·')} 광고 집중 / 잠재고객 DB 확보 / 견본주택 사전예약`, kpi:'KPI · 사전예약 500건 / 노출 50만'},
+        {week:'W2 · 청약·계약', title:'정식 청약 접수 / 계약 클로징', desc:'견본주택 운영 / 상담사 배치 / 잔금대출 상담창구 (신한·KB)', kpi:'KPI · 청약경쟁률 10:1 / 정당계약율 85%'},
+        {week:'W3 · 예비·수의', title:'예비당첨자 컨택 / 잔여 호실 전환', desc:`예비당첨자 순번 콜드콜 / ${r.employers[0]} 임직원 단체 영업 / ROI 시뮬레이터 제시`, kpi:'KPI · 전환율 30% 이상'},
+        {week:'W4~6 · 후속', title:'잔여 호실 수의계약·후속 마케팅', desc:'잔여 호실 풀 영업 / 광역 광고 확대 / 입주 시점 100% 마감', kpi:'KPI · 6주 내 완판'}
+      ],
+      raciHead:['활동','사업주체','분양대행','광고대행','은행'],
+      raci:[
+        ['사전마케팅','C','A','R','—'],
+        ['청약 관리','A','R','I','C'],
+        ['계약 진행','A','R','—','C'],
+        ['광고 집행','C','A','R','—'],
+        ['잔금 대출','I','C','—','R/A'],
+        ['수의계약','A','R','C','C']
+      ]
+    },
+    materials:{
+      commonTitle:'표준 무상품목 패키지 (추정)',
+      commonFull:['LG·삼성 빌트인 풀패키지','추가 인테리어 비용 0원'],
+      common:[
+        ['빌트인 인덕션','3구 기본'],
+        ['후드','슬림 빌트인'],
+        ['냉장고','B 기본 / C 4도어'],
+        ['전자레인지','빌트인'],
+        ['세탁·건조 겸용','—'],
+        ['전열교환기','환기·열교환'],
+        ['에어컨','B 2EA / C 3EA'],
+        ['신발장 펜트리','수납 강화']
+      ],
+      extraTitle:null,
+      extra:null,
+      note:'<b>광고 활용</b> · "풀옵션 무상 + 즉시 임대 가능" 메시지 핵심. 실 인테리어 환산가치 1,000~2,000만원 무상 효과.'
+    },
+    conclusion:{
+      title:`${r.name} 신축,<br><em>${r.employers[0]} 직주근접.</em>`,
+      message:`B타입은 갭투자(월세 ${r.rentMonthly}만 / ROI ${yieldEst}%), C타입은 실거주·법인사택 분리 캠페인.<br>${r.media[0]} 중심 디지털 + ${r.landmark.split('·')[0]} 권역 BTL 조합이 핵심입니다.`
+    }
+  };
+}
+
+// ===== 페이지 로드시 기본 렌더 =====
+applyProject(PROJECTS.parkraum_yeoeuido, true);
+
+// ===== 공유 =====
+function shareReport(){
+  if(navigator.share){
+    navigator.share({
+      title: '시세조사 보고서',
+      text: '(주)리치시스템 분양현장 시세조사 보고서',
+      url: window.location.href
+    }).catch(()=>{});
+  } else {
+    alert('이 디바이스에서는 공유 기능을 지원하지 않습니다.\nPDF로 저장 후 전송해 주세요.');
+  }
+}
+
+// ===== PDF 저장 (html2pdf.js - 화면 그대로) =====
+function savePDF(){
+  const btn = document.getElementById('pdfBtn');
+  const reportEl = document.getElementById('report');
+  
+  if(!reportEl){
+    alert('보고서가 준비되지 않았습니다.');
+    return;
+  }
+  if(typeof html2pdf === 'undefined'){
+    alert('PDF 라이브러리 로드 실패 — 새로고침 후 다시 시도하세요.');
+    return;
+  }
+  
+  // 파일명
+  const projName = (document.getElementById('proj').value || '시세조사').trim().replace(/[\\/:*?"<>|]/g,'');
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  const filename = projName + '_시세조사_' + today + '.pdf';
+  
+  // 버튼 로딩
+  const origBtnHTML = btn.innerHTML;
+  btn.innerHTML = '⏳ 생성중... (10~20초)';
+  btn.disabled = true;
+  
+  // A4 가로(landscape) 내부 폭 계산 (297mm - 좌우 10mm margin = 277mm)
+  // 96 DPI 기준: 277 / 25.4 * 96 ≈ 1047px → 1040으로 정렬
+  const captureWidth = 1040;
+  
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: filename,
+    image: { type: 'jpeg', quality: 0.92 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#FBF7EC',
+      windowWidth: captureWidth,
+      width: captureWidth,
+      scrollX: 0,
+      scrollY: 0,
+      logging: false,
+      // ✅ 클론 단계에서 PDF 전용 처리 (live DOM은 건드리지 않음)
+      onclone: (clonedDoc) => {
+        // ★ 핵심: <style> 태그 직접 주입 — !important로 모든 미디어쿼리 무력화
+        const pdfStyle = clonedDoc.createElement('style');
+        pdfStyle.textContent = `
+          html, body {
+            max-width: ${captureWidth}px !important;
+            width: ${captureWidth}px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            background: #FBF7EC !important;
+          }
+          /* UI 컨트롤 숨김 */
+          #reportNotice, .kakao-status, .kakao-chips,
+          .topbar, .input-panel, .actions, .minimap {
+            display: none !important;
+          }
+          /* 가로 페이지 최적화 레이아웃 */
+          .kpis {
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 12px !important;
+          }
+          .mats {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+          .mat.full {
+            grid-column: span 4 !important;
+          }
+          .swot {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          /* 표지·결론 와이드 패딩 */
+          .cover, .final {
+            padding: 60px 80px 70px !important;
+          }
+          .cover h1 {
+            font-size: 36pt !important;
+            line-height: 1.15 !important;
+          }
+          /* 본문 섹션 패딩 (가로 폭 활용) */
+          .sec {
+            padding: 32px 55px 38px !important;
+          }
+          .sec h3 {
+            font-size: 22pt !important;
+          }
+          /* 페이지 분할 제어 */
+          .cover {
+            page-break-after: always !important;
+            min-height: auto !important;
+          }
+          .final {
+            page-break-before: auto !important;
+          }
+          .sec {
+            page-break-inside: auto !important;
+          }
+          /* 큰 카드들은 잘리지 않게 */
+          .kpi, .persona, .pchart, .swot-cell, .tl-item, .mat,
+          .verdict, .sim, .tbl-wrap, .chmix {
+            page-break-inside: avoid !important;
+          }
+          /* 글자 크기 조정 (가로 페이지) */
+          body { font-size: 14px !important; }
+          .blist li { font-size: 13px !important; }
+          /* 표 가독성 */
+          table { font-size: 12px !important; }
+        `;
+        clonedDoc.head.appendChild(pdfStyle);
+        
+        // 카카오 지도는 iframe이라 PDF 캡처 안됨 → 텍스트 박스로 대체
+        clonedDoc.querySelectorAll('.kakao-wrap').forEach(el => {
+          el.innerHTML = '<div style="padding:24px 18px;background:#F4ECD8;border-radius:6px;text-align:center;color:#5B5B5B;font-size:13px;border:1px solid #ddd;line-height:1.7"><b style="color:#0F2043;font-size:15px;display:block;margin-bottom:6px">📍 카카오 실측 인프라 지도</b>웹 버전에서 실시간 지도·시설 조회 가능 · QR/링크로 공유</div>';
+          el.style.background = 'transparent';
+          el.style.border = 'none';
+        });
+      }
+    },
+    jsPDF: {
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'landscape',
+      compress: true,
+      putOnlyUsedFonts: true
+    },
+    pagebreak: {
+      mode: ['css', 'legacy'],
+      before: ['.final'],
+      avoid: ['.kpi','.persona','.pchart','.swot-cell','.tl-item','.mat','.verdict','.sim','.tbl-wrap','.chmix']
+    }
+  };
+  
+  // 캡처 실행
+  setTimeout(() => {
+    html2pdf().set(opt).from(reportEl).save().then(() => {
+      btn.innerHTML = origBtnHTML;
+      btn.disabled = false;
+    }).catch(err => {
+      console.error('PDF 저장 오류:', err);
+      alert('PDF 저장 중 오류: ' + err.message + '\n\n새로고침 후 다시 시도해주세요.');
+      btn.innerHTML = origBtnHTML;
+      btn.disabled = false;
+    });
+  }, 100);
+}
+
+// ===== Kakao 지도 실연동 =====
+const KK_CATS = {
+  work:    {name:'직장',   keywords:['관공서','산업단지','회사','오피스','공장'], code:null},
+  shop:    {name:'쇼핑',   keywords:['마트','백화점','시장','편의점'],            code:'MT1'},
+  medical: {name:'의료',   keywords:['병원','약국'],                              code:'HP8'},
+  school:  {name:'학교',   keywords:['초등학교','중학교','고등학교','대학교','유치원'], code:'SC4'},
+  park:    {name:'공원',   keywords:['공원'],                                     code:'AT4'},
+  subway:  {name:'지하철', keywords:['역','지하철역'],                            code:'SW8'}
+};
+
+let kkMap = null, kkGeocoder = null, kkPlaces = null, kkInfowindow = null;
+let kkMainOverlay = null, kkRadiusItems = [], kkOverlays = [];
+let kkCenter = null, kkCurrentCat = 'all', kkAnchor = null;
+let kkReady = false, kkSdkLoaded = false;
+
+function kkSetStatus(text, type){
+  const dot = document.querySelector('#kk-status .ks-dot');
+  const txt = document.getElementById('kk-status-text');
+  if(!dot || !txt) return;
+  dot.className = 'ks-dot' + (type === 'err' ? ' err' : type === 'load' ? ' load' : '');
+  txt.textContent = text;
+}
+
+function kkInit(){
+  if(kkReady) return;
+  try {
+    const mapEl = document.getElementById('kakaoMap');
+    if(!mapEl) return;
+    kkMap = new kakao.maps.Map(mapEl, {
+      center: new kakao.maps.LatLng(37.5283, 126.9244),
+      level: 4
+    });
+    kkGeocoder = new kakao.maps.services.Geocoder();
+    kkPlaces = new kakao.maps.services.Places();
+    kkInfowindow = new kakao.maps.InfoWindow({zIndex:5});
+    kkAnchor = new kakao.maps.Marker({position: new kakao.maps.LatLng(0,0)});
+    kkReady = true;
+    kkSetStatus('Kakao 지도 준비 완료 · 주소 입력 후 자동 검색', '');
+    return true;
+  } catch(e){
+    console.error('Kakao init failed:', e);
+    kkSetStatus('⚠️ 지도 초기화 실패: '+e.message, 'err');
+    return false;
+  }
+}
+
+function kkClear(){
+  if(kkMainOverlay) kkMainOverlay.setMap(null);
+  kkRadiusItems.forEach(c => c.setMap(null));
+  kkRadiusItems = [];
+  kkOverlays.forEach(o => o.overlay.setMap(null));
+  kkOverlays = [];
+  if(kkInfowindow) kkInfowindow.close();
+}
+
+function kkDrawCenter(latlng, label){
+  kkCenter = latlng;
+  kkMap.setCenter(latlng);
+  kkMap.setLevel(4);
+  kkMainOverlay = new kakao.maps.CustomOverlay({
+    position: latlng,
+    content: '<div class="kk-label main">★ 분양 현장</div>',
+    yAnchor: 1.1
+  });
+  kkMainOverlay.setMap(kkMap);
+  // 도보 5/10/15분 반경
+  const rings = [
+    {r:335, min:5, color:'#FFD700'},
+    {r:670, min:10, color:'#C9A961'},
+    {r:1005, min:15, color:'#8bd3ff'}
+  ];
+  rings.forEach(ring => {
+    const c = new kakao.maps.Circle({
+      center: latlng, radius: ring.r,
+      strokeWeight: 2, strokeColor: ring.color, strokeOpacity:.7, strokeStyle:'shortdash',
+      fillColor: ring.color, fillOpacity:.04
+    });
+    c.setMap(kkMap);
+    kkRadiusItems.push(c);
+    const R = 6371000;
+    const dLngDeg = (ring.r/(R*Math.cos(latlng.getLat()*Math.PI/180)))*(180/Math.PI);
+    const labelPos = new kakao.maps.LatLng(latlng.getLat(), latlng.getLng()+dLngDeg);
+    const ringLabel = new kakao.maps.CustomOverlay({
+      position: labelPos,
+      content: '<div style="padding:3px 6px;background:rgba(7,17,31,.92);color:'+ring.color+';border:1.5px solid '+ring.color+';border-radius:8px;font-size:9px;font-weight:900;white-space:nowrap;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.4)">'+ring.r+'m · 도보 '+ring.min+'분</div>',
+      yAnchor:0.5, xAnchor:0.5
+    });
+    ringLabel.setMap(kkMap);
+    kkRadiusItems.push(ringLabel);
+  });
+}
+
+function kkDistMin(lat, lng){
+  if(!kkCenter) return 1;
+  const R=6371000, toRad=d=>d*Math.PI/180;
+  const lat1=kkCenter.getLat(), lng1=kkCenter.getLng();
+  const dLat=toRad(lat-lat1), dLng=toRad(lng-lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat))*Math.sin(dLng/2)**2;
+  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.max(1, Math.round(R*c/67));
+}
+
+function kkAddPlace(cat, p, fromKeyword){
+  const lat = Number(p.y), lng = Number(p.x);
+  if(!isFinite(lat) || !isFinite(lng)) return;
+  // ✅ 카테고리 코드 검증 — 단, fromKeyword(키워드 검색)는 완화 적용
+  // categorySearch 결과만 엄격 필터, keywordSearch는 통과
+  if(!fromKeyword && KK_CATS[cat].code && p.category_group_code !== KK_CATS[cat].code) return;
+  const min = kkDistMin(lat, lng);
+  const pos = new kakao.maps.LatLng(lat, lng);
+  const content = '<div class="kk-label '+cat+'" data-name="'+kkEscAttr(p.place_name)+'">'+kkEscHtml(p.place_name)+'</div>';
+  const overlay = new kakao.maps.CustomOverlay({position:pos, content:content, yAnchor:1.1});
+  overlay.setMap((kkCurrentCat === 'all' || kkCurrentCat === cat) ? kkMap : null);
+  kkOverlays.push({cat, overlay, place:p, min, pos});
+}
+
+function kkBindClicks(){
+  setTimeout(() => {
+    document.querySelectorAll('#kakaoMap ~ .kakao-chips').forEach(()=>{}); // no-op
+    document.querySelectorAll('.kk-label:not(.main)').forEach(el => {
+      if(el.dataset.bound === '1') return;
+      el.dataset.bound = '1';
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        const name = el.getAttribute('data-name') || el.textContent;
+        const item = kkOverlays.find(o => o.place.place_name === name);
+        if(!item) return;
+        const p = item.place;
+        kkInfowindow.setContent(
+          '<div class="kk-info"><b>'+kkEscHtml(p.place_name)+'</b>'+
+          '<div class="dist">도보 약 '+item.min+'분 · '+KK_CATS[item.cat].name+'</div>'+
+          '<div>'+kkEscHtml(p.road_address_name || p.address_name || '')+'</div>'+
+          '<a target="_blank" rel="noopener" href="'+kkEscAttr(p.place_url||'')+'">카카오맵에서 보기</a></div>'
+        );
+        kkAnchor.setPosition(item.pos);
+        kkInfowindow.open(kkMap, kkAnchor);
+      });
+    });
+  }, 200);
+}
+
+function kkSearchAll(){
+  const jobs = [];
+  const dbg = { received: 0, errs: 0, zero: 0, ok: 0 };
+  Object.keys(KK_CATS).forEach(cat => {
+    const c = KK_CATS[cat];
+    if(c.code){
+      jobs.push(new Promise(resolve => {
+        kkPlaces.categorySearch(c.code, (data, status) => {
+          if(status === kakao.maps.services.Status.OK){
+            dbg.ok++; dbg.received += data.length;
+            data.slice(0,15).forEach(p => kkAddPlace(cat, p, false));
+          } else if(status === kakao.maps.services.Status.ZERO_RESULT){
+            dbg.zero++;
+          } else {
+            dbg.errs++;
+          }
+          resolve();
+        }, {location:kkCenter, radius:1500, sort:kakao.maps.services.SortBy.DISTANCE, size:15});
+      }));
+    }
+    c.keywords.forEach(k => {
+      jobs.push(new Promise(resolve => {
+        kkPlaces.keywordSearch(k, (data, status) => {
+          if(status === kakao.maps.services.Status.OK){
+            dbg.ok++; dbg.received += data.length;
+            data.slice(0,5).forEach(p => kkAddPlace(cat, p, true));
+          } else if(status === kakao.maps.services.Status.ZERO_RESULT){
+            dbg.zero++;
+          } else {
+            dbg.errs++;
+          }
+          resolve();
+        }, {location:kkCenter, radius:1500, sort:kakao.maps.services.SortBy.DISTANCE, size:5});
+      }));
+    });
+  });
+  Promise.all(jobs).then(() => {
+    kkDedupe();
+    kkUpdateCounts();
+    kkFitBounds();
+    kkBindClicks();
+    kkUpdateTable();
+    // 디버그 정보 포함 상태 표시
+    if(kkOverlays.length === 0){
+      kkSetStatus(`⚠ 시설 0건 · API응답 OK ${dbg.ok}/Zero ${dbg.zero}/Err ${dbg.errs} · 수신 ${dbg.received}건`, 'err');
+    } else {
+      kkSetStatus(`✓ 검색 완료 · ${kkOverlays.length}개 시설 발견 (수신 ${dbg.received}건)`, '');
+    }
+  }).catch(err => {
+    console.error('Kakao search error:', err);
+    kkSetStatus('⚠️ 검색 오류: '+err.message, 'err');
+  });
+}
+
+function kkDedupe(){
+  const seen = new Set();
+  kkOverlays = kkOverlays.filter(o => {
+    const key = o.place.id || (o.place.place_name+'|'+o.place.x+'|'+o.place.y);
+    if(seen.has(key)){ o.overlay.setMap(null); return false; }
+    seen.add(key); return true;
+  });
+}
+
+function kkUpdateCounts(){
+  const counts = {all:kkOverlays.length, work:0, shop:0, medical:0, school:0, park:0, subway:0};
+  kkOverlays.forEach(o => counts[o.cat]++);
+  Object.keys(counts).forEach(k => {
+    const el = document.getElementById('kk-cnt-'+k);
+    if(el) el.textContent = counts[k];
+  });
+}
+
+function kkFitBounds(){
+  if(!kkCenter) return;
+  const b = new kakao.maps.LatLngBounds();
+  b.extend(kkCenter);
+  kkOverlays.slice(0,40).forEach(o => b.extend(o.pos));
+  if(!b.isEmpty()) kkMap.setBounds(b);
+}
+
+function kkFilter(cat){
+  kkCurrentCat = cat;
+  document.querySelectorAll('.kk-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
+  kkOverlays.forEach(o => o.overlay.setMap((cat === 'all' || o.cat === cat) ? kkMap : null));
+  kkBindClicks();
+}
+
+function kkUpdateTable(){
+  // 실측 데이터로 테이블 교체
+  const tbody = document.getElementById('kk-facility-tbody');
+  const cap = document.getElementById('kk-facility-cap');
+  if(!tbody) return;
+  
+  // 카테고리별 가장 가까운 1-2개씩 선별
+  const picks = {};
+  kkOverlays.forEach(o => {
+    if(!picks[o.cat]) picks[o.cat] = [];
+    if(picks[o.cat].length < 2) picks[o.cat].push(o);
+  });
+  
+  const rows = [];
+  ['subway','work','shop','medical','school','park'].forEach(cat => {
+    if(picks[cat]){
+      picks[cat].forEach(o => {
+        rows.push([KK_CATS[cat].name, o.place.place_name, o.min*67+'m', o.min+'분']);
+      });
+    }
+  });
+  
+  if(rows.length > 0){
+    tbody.innerHTML = rows.slice(0,8).map(r => `<tr><td class="name">${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join('');
+    if(cap) cap.textContent = '✓ 카카오 로컬 API 실측 (반경 1.5km / 도보 4km/h 기준)';
+  }
+}
+
+function kkEscHtml(s){
+  return String(s||'').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+}
+function kkEscAttr(s){
+  return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function kkSearchAddress(addr, coords){
+  if(!kkReady || !kkGeocoder){
+    kkSetStatus('지도 대기중... 잠시 후 자동 재시도', 'load');
+    setTimeout(() => kkSearchAddress(addr, coords), 500);
+    return;
+  }
+  kkClear();
+  kkSetStatus('주소 검색 중...', 'load');
+  
+  // ★ 좌표 직접 지정된 경우 (사전입력 현장) — 지오코더 우회
+  if(coords && coords.lat && coords.lng){
+    kkDrawCenter(new kakao.maps.LatLng(coords.lat, coords.lng), addr);
+    kkSearchAll();
+    return;
+  }
+  
+  // 주소 형식 변형 (지오코더 호환성)
+  const variants = [];
+  variants.push(addr);
+  // 시·도 제거 (서울특별시, 울산광역시 등)
+  const noSido = addr.replace(/^[가-힣]+(특별시|광역시|특별자치시|특별자치도|도)\s*/, '');
+  if(noSido !== addr) variants.push(noSido);
+  // 번지 제거
+  const noBunji = addr.replace(/번지$/, '');
+  if(noBunji !== addr) variants.push(noBunji);
+  // 동·구만 (예: "여의도동 17-4")
+  const m = addr.match(/([가-힣]+동|[가-힣]+리)\s*[\d\-]+/);
+  if(m) variants.push(m[0]);
+  // 중복 제거
+  const uniq = [...new Set(variants)];
+  
+  // 변형들을 순차 시도
+  function tryVariant(idx){
+    if(idx >= uniq.length){
+      // 지오코더 전체 실패 → 키워드 검색
+      tryKeyword();
+      return;
+    }
+    kkGeocoder.addressSearch(uniq[idx], (res, status) => {
+      if(status === kakao.maps.services.Status.OK && res[0]){
+        kkDrawCenter(new kakao.maps.LatLng(res[0].y, res[0].x), addr);
+        kkSearchAll();
+      } else {
+        tryVariant(idx + 1);
+      }
+    });
+  }
+  
+  function tryKeyword(){
+    // 키워드(장소명) 검색 (예: "파크라움 여의도")
+    const projName = (document.getElementById('proj').value || '').trim();
+    const keywordQ = projName || uniq[uniq.length-1] || addr;
+    kkPlaces.keywordSearch(keywordQ, (data, s) => {
+      if(s === kakao.maps.services.Status.OK && data[0]){
+        kkDrawCenter(new kakao.maps.LatLng(data[0].y, data[0].x), data[0].place_name);
+        kkSearchAll();
+      } else {
+        // 동 이름만 추출해서 검색
+        const dongMatch = addr.match(/([가-힣]+동)/);
+        if(dongMatch){
+          kkPlaces.keywordSearch(dongMatch[1], (data2, s2) => {
+            if(s2 === kakao.maps.services.Status.OK && data2[0]){
+              kkDrawCenter(new kakao.maps.LatLng(data2[0].y, data2[0].x), dongMatch[1] + ' (인근)');
+              kkSearchAll();
+              kkSetStatus('ⓘ 정확한 좌표 미확인 — '+dongMatch[1]+' 중심 인근 시설 표시', 'load');
+            } else {
+              fallbackToCurrentCenter(addr);
+            }
+          });
+        } else {
+          fallbackToCurrentCenter(addr);
+        }
+      }
+    });
+  }
+  
+  // ★ 최종 fallback: 지도 중심에서 그냥 카테고리 검색 진행
+  function fallbackToCurrentCenter(addr){
+    if(kkMap){
+      const center = kkMap.getCenter();
+      kkCenter = center;
+      kkDrawCenter(center, addr + ' (추정 위치)');
+      kkSearchAll();
+      kkSetStatus('ⓘ 좌표 미확인 — 지도 중심 기준 인근 시설 자동 표시', 'load');
+    } else {
+      kkSetStatus('⚠️ 지도 미준비 상태', 'err');
+    }
+  }
+  
+  tryVariant(0);
+}
+
+// SDK 로드 핸들러
+function kkOnSdkReady(){
+  if(!window.kakao || !window.kakao.maps){
+    kkSetStatus('⚠️ Kakao SDK 미로드 — 도메인 등록 또는 키 확인 필요', 'err');
+    return;
+  }
+  kkSdkLoaded = true;
+  kakao.maps.load(() => {
+    if(kkInit()){
+      // 페이지 로드시 대기 중이던 프로젝트가 있으면 그 좌표 사용
+      const pending = window.__pendingProject;
+      const currentAddr = document.getElementById('addr').value.trim();
+      if(pending && pending.coords){
+        kkSearchAddress(pending.cover.address, pending.coords);
+      } else if(currentAddr){
+        kkSearchAddress(currentAddr);
+      }
+    }
+  });
+}
+
+// 칩 클릭 이벤트 위임
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.kk-chip');
+  if(chip && chip.dataset.cat){
+    kkFilter(chip.dataset.cat);
+  }
+});
+
+// SDK 로드 폴링 (최대 10초)
+let kkLoadAttempts = 0;
+function kkWaitForSdk(){
+  kkLoadAttempts++;
+  if(window.kakao && window.kakao.maps){
+    kkOnSdkReady();
+    return;
+  }
+  if(kkLoadAttempts > 100){
+    kkSetStatus('⚠️ Kakao SDK 로드 시간 초과 (10초) — 네트워크/도메인 등록 확인', 'err');
+    return;
+  }
+  // 로드 중 상태 표시
+  if(kkLoadAttempts === 5){
+    kkSetStatus('Kakao SDK 로드 중...', 'load');
+  }
+  if(kkLoadAttempts === 30){
+    kkSetStatus('Kakao SDK 로드 중... (네트워크 느릴 수 있음)', 'load');
+  }
+  setTimeout(kkWaitForSdk, 100);
+}
+kkWaitForSdk();
+
+// 보고서 갱신시 지도도 함께 갱신
+const _origApplyProject = applyProject;
+applyProject = function(project, isMatched, regionLabel){
+  _origApplyProject(project, isMatched, regionLabel);
+  // 지도 재초기화 + 검색
+  setTimeout(() => {
+    if(kkReady){
+      kkSearchAddress(project.cover.address, project.coords);
+    } else if(kkSdkLoaded){
+      kkOnSdkReady();
+    }
+    // 페이지 로드시 SDK가 아직 안 됐으면 SDK 준비 후 자동 검색되도록 저장
+    window.__pendingProject = project;
+  }, 100);
+};
+</script>
+
+</body>
+</html>
